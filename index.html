@@ -822,11 +822,11 @@
         }
 
         function getGrowthStage(day) {
-            // Tomato growth stages
+            // Tomato growth stages (adjusted for Sol's actual growth)
             if (day <= 7) return { stage: 'seed', progress: 5 };
-            if (day <= 21) return { stage: 'sprout', progress: 25 };
-            if (day <= 50) return { stage: 'veg', progress: 50 };
-            if (day <= 70) return { stage: 'flower', progress: 75 };
+            if (day <= 14) return { stage: 'sprout', progress: 20 };
+            if (day <= 35) return { stage: 'veg', progress: 45 };
+            if (day <= 60) return { stage: 'flower', progress: 70 };
             return { stage: 'fruit', progress: 95 };
         }
 
