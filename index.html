@@ -724,6 +724,24 @@
                     </div>
                     <div class="ath-percent" id="ath-percent">--% of ATH</div>
                 </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="metric-age">--</div>
+                    <div class="metric-label">Token Age</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="metric-last-trade">--</div>
+                    <div class="metric-label">Last Trade</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="metric-sol-mcap">--</div>
+                    <div class="metric-label">Market Cap (SOL)</div>
+                </div>
+                <div class="metric-card">
+                    <a href="#" id="metric-twitter" target="_blank" style="text-decoration: none;">
+                        <div class="metric-value" style="color: var(--accent-blue);">𝕏</div>
+                        <div class="metric-label">Twitter/X</div>
+                    </a>
+                </div>
             </div>
             <div class="disclaimer">
                 <span class="disclaimer-icon">⚠️</span>
@@ -1068,9 +1086,10 @@
 
                 const data = await response.json();
 
+                // Basic metrics
                 document.getElementById('metric-mcap').textContent = formatNumber(data.usd_market_cap || 0);
-                document.getElementById('metric-holders').textContent = data.holders || '--';
-                document.getElementById('metric-replies').textContent = formatCompact(data.replies || 0);
+                document.getElementById('metric-holders').textContent = data.holders || data.num_participants || '--';
+                document.getElementById('metric-replies').textContent = formatCompact(data.replies || data.reply_count || 0);
                 document.getElementById('metric-ath').textContent = formatNumber(data.ath_market_cap || 0);
 
                 // ATH progress
@@ -1078,6 +1097,53 @@
                     const athPct = (data.usd_market_cap / data.ath_market_cap) * 100;
                     document.getElementById('ath-progress').style.width = `${Math.min(100, athPct)}%`;
                     document.getElementById('ath-percent').textContent = `${athPct.toFixed(1)}% of ATH`;
+                }
+
+                // Token age
+                if (data.created_timestamp) {
+                    const created = new Date(data.created_timestamp);
+                    const now = new Date();
+                    const days = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+                    document.getElementById('metric-age').textContent = `${days}d`;
+                }
+
+                // Last trade
+                if (data.last_trade_timestamp) {
+                    const lastTrade = new Date(data.last_trade_timestamp);
+                    const now = new Date();
+                    const seconds = Math.floor((now - lastTrade) / 1000);
+                    if (seconds < 60) {
+                        document.getElementById('metric-last-trade').textContent = `${seconds}s ago`;
+                    } else if (seconds < 3600) {
+                        document.getElementById('metric-last-trade').textContent = `${Math.floor(seconds / 60)}m ago`;
+                    } else {
+                        document.getElementById('metric-last-trade').textContent = `${Math.floor(seconds / 3600)}h ago`;
+                    }
+                }
+
+                // SOL market cap
+                if (data.market_cap) {
+                    const solMcap = data.market_cap;
+                    if (solMcap >= 1000) {
+                        document.getElementById('metric-sol-mcap').textContent = `${(solMcap / 1000).toFixed(1)}K SOL`;
+                    } else {
+                        document.getElementById('metric-sol-mcap').textContent = `${solMcap.toFixed(0)} SOL`;
+                    }
+                }
+
+                // Twitter link
+                if (data.twitter) {
+                    document.getElementById('metric-twitter').href = data.twitter;
+                }
+
+                // Update badge based on status
+                const badge = document.getElementById('token-badge');
+                if (data.complete) {
+                    badge.textContent = 'GRADUATED';
+                    badge.style.background = 'var(--accent-purple)';
+                } else if (data.is_currently_live) {
+                    badge.textContent = 'LIVE';
+                    badge.style.background = 'var(--accent-green)';
                 }
 
                 document.getElementById('token-update').textContent = `Updated ${new Date().toLocaleTimeString()}`;
