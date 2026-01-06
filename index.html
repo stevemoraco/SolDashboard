@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Biodome - Live Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #0a0f0a;
+            --bg-card: #111a11;
+            --bg-card-hover: #152015;
+            --text-primary: #e8f5e8;
+            --text-secondary: #8ba88b;
+            --text-muted: #5a7a5a;
+            --accent-green: #4ade80;
+            --accent-green-dim: #22c55e;
+            --accent-yellow: #fbbf24;
+            --accent-red: #f87171;
+            --accent-blue: #60a5fa;
+            --border: #1e3a1e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(180deg, var(--bg-card) 0%, transparent 100%);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-sub {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-card);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid var(--border);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 1.5rem;
+            padding: 1.5rem 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .bottom-row {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Webcam Section */
+        .webcam-section {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 450px;
+        }
+
+        .section-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .webcam-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: #050805;
+        }
+
+        .webcam-img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 0.5rem;
+            object-fit: contain;
+        }
+
+        .webcam-placeholder {
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        /* Verdant Output */
+        .output-section {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            max-height: 450px;
+        }
+
+        .output-content {
+            flex: 1;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            overflow-y: auto;
+            background: linear-gradient(180deg, transparent 0%, rgba(74, 222, 128, 0.02) 100%);
+        }
+
+        /* Sensors Grid */
+        .sensors-section {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .sensors-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border);
+        }
+
+        .sensor-card {
+            background: var(--bg-card);
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .sensor-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .sensor-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .sensor-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Devices Section */
+        .devices-section {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .devices-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            padding: 1rem;
+        }
+
+        .device-card {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: var(--bg-dark);
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .device-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .device-indicator.on {
+            background: var(--accent-green);
+            box-shadow: 0 0 10px var(--accent-green);
+        }
+
+        .device-indicator.off {
+            background: var(--text-muted);
+        }
+
+        .device-name {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Footer */
+        .footer {
+            padding: 1rem 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .sol-day {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        /* Mobile Layout */
+        @media (max-width: 900px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+
+            .output-section {
+                order: -1;
+                max-height: 300px;
+            }
+
+            .webcam-section {
+                max-height: none;
+                min-height: 280px;
+            }
+
+            .bottom-row {
+                grid-column: 1;
+                grid-template-columns: 1fr;
+            }
+
+            .sensors-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .devices-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+        }
+
+        /* Loading state */
+        .loading {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Error state */
+        .error {
+            color: var(--accent-red);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <span class="logo-icon">🌱</span>
+            <div>
+                <div class="logo-text">Claude</div>
+                <div class="logo-sub">Powered by AutonCorp Verdant Autonomics</div>
+            </div>
+        </div>
+        <div class="status-badge">
+            <div class="status-dot"></div>
+            <span id="last-update">Connecting...</span>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Webcam Section -->
+        <section class="webcam-section">
+            <div class="section-header">
+                <span class="section-title">📷 Live View - Sol the Trophy Tomato</span>
+            </div>
+            <div class="webcam-container">
+                <img id="webcam-img" class="webcam-img" alt="Sol the Tomato" style="display: none;">
+                <div id="webcam-placeholder" class="webcam-placeholder">
+                    <p>📷 Loading webcam...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Verdant Output -->
+        <section class="output-section">
+            <div class="section-header">
+                <span class="section-title">🤖 Claude's Latest Output</span>
+            </div>
+            <div id="verdant-output" class="output-content loading">
+                Connecting to Claude...
+            </div>
+        </section>
+
+        <!-- Bottom Row: Sensors & Devices -->
+        <div class="bottom-row">
+            <!-- Sensors -->
+            <section class="sensors-section">
+                <div class="section-header">
+                    <span class="section-title">📊 Environmental Sensors</span>
+                </div>
+                <div class="sensors-grid">
+                    <div class="sensor-card">
+                        <div class="sensor-icon">🌡️</div>
+                        <div class="sensor-value" id="sensor-temp">--</div>
+                        <div class="sensor-label">Air Temp</div>
+                    </div>
+                    <div class="sensor-card">
+                        <div class="sensor-icon">💧</div>
+                        <div class="sensor-value" id="sensor-humidity">--</div>
+                        <div class="sensor-label">Humidity</div>
+                    </div>
+                    <div class="sensor-card">
+                        <div class="sensor-icon">🌿</div>
+                        <div class="sensor-value" id="sensor-vpd">--</div>
+                        <div class="sensor-label">VPD</div>
+                    </div>
+                    <div class="sensor-card">
+                        <div class="sensor-icon">🪴</div>
+                        <div class="sensor-value" id="sensor-soil">--</div>
+                        <div class="sensor-label">Soil Moisture</div>
+                    </div>
+                    <div class="sensor-card">
+                        <div class="sensor-icon">💨</div>
+                        <div class="sensor-value" id="sensor-co2">--</div>
+                        <div class="sensor-label">CO₂</div>
+                    </div>
+                    <div class="sensor-card">
+                        <div class="sensor-icon">🌡️</div>
+                        <div class="sensor-value" id="sensor-leaf">--</div>
+                        <div class="sensor-label">Leaf Δ</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Devices -->
+            <section class="devices-section">
+                <div class="section-header">
+                    <span class="section-title">⚡ Device Status</span>
+                </div>
+                <div class="devices-grid">
+                    <div class="device-card">
+                        <div class="device-indicator off" id="device-light"></div>
+                        <span class="device-name">💡 Grow Light</span>
+                    </div>
+                    <div class="device-card">
+                        <div class="device-indicator off" id="device-heat"></div>
+                        <span class="device-name">🔥 Heat Mat</span>
+                    </div>
+                    <div class="device-card">
+                        <div class="device-indicator off" id="device-fan"></div>
+                        <span class="device-name">💨 Circ Fan</span>
+                    </div>
+                    <div class="device-card">
+                        <div class="device-indicator off" id="device-exhaust"></div>
+                        <span class="device-name">🌀 Exhaust</span>
+                    </div>
+                    <div class="device-card">
+                        <div class="device-indicator off" id="device-pump"></div>
+                        <span class="device-name">💦 Pump</span>
+                    </div>
+                    <div class="device-card">
+                        <div class="device-indicator off" id="device-humid"></div>
+                        <span class="device-name">💭 Humidifier</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <span class="sol-day" id="sol-day">Day 38</span> · 
+        AutonCorp Biodome Project · 
+        <a href="https://autoncorp.com" style="color: var(--accent-green);">autoncorp.com</a>
+    </footer>
+
+    <script>
+        const API_BASE = '';  // Same directory
+
+        async function fetchStatus() {
+            try {
+                const response = await fetch(`${API_BASE}get_status.php?t=${Date.now()}`);
+                if (!response.ok) throw new Error('Status not available');
+                
+                const data = await response.json();
+                updateDashboard(data);
+            } catch (error) {
+                console.error('Failed to fetch status:', error);
+                document.getElementById('verdant-output').textContent = 'Waiting for Claude...';
+                document.getElementById('verdant-output').classList.add('loading');
+            }
+        }
+
+        function updateDashboard(data) {
+            // Update Verdant output
+            const outputEl = document.getElementById('verdant-output');
+            outputEl.textContent = data.verdant_output || 'No output available';
+            outputEl.classList.remove('loading');
+
+            // Update sensors
+            if (data.sensors) {
+                document.getElementById('sensor-temp').textContent = 
+                    data.sensors.air_temp ? `${data.sensors.air_temp.toFixed(1)}°C` : '--';
+                document.getElementById('sensor-humidity').textContent = 
+                    data.sensors.humidity ? `${data.sensors.humidity.toFixed(0)}%` : '--';
+                document.getElementById('sensor-vpd').textContent = 
+                    data.sensors.vpd ? `${data.sensors.vpd.toFixed(2)}` : '--';
+                document.getElementById('sensor-soil').textContent = 
+                    data.sensors.soil_moisture ? `${data.sensors.soil_moisture.toFixed(0)}%` : '--';
+                document.getElementById('sensor-co2').textContent = 
+                    data.sensors.co2 ? `${Math.round(data.sensors.co2)}` : '--';
+                document.getElementById('sensor-leaf').textContent = 
+                    data.sensors.leaf_temp_delta ? `${data.sensors.leaf_temp_delta.toFixed(1)}°` : '--';
+            }
+
+            // Update devices
+            if (data.devices) {
+                updateDevice('device-light', data.devices.grow_light);
+                updateDevice('device-heat', data.devices.heat_mat);
+                updateDevice('device-fan', data.devices.circulation_fan);
+                updateDevice('device-exhaust', data.devices.exhaust_fan);
+                updateDevice('device-pump', data.devices.water_pump);
+                updateDevice('device-humid', data.devices.humidifier);
+            }
+
+            // Update Sol's day
+            if (data.sol_day) {
+                document.getElementById('sol-day').textContent = `Day ${data.sol_day}`;
+            }
+
+            // Update timestamp
+            if (data.timestamp) {
+                const date = new Date(data.timestamp);
+                document.getElementById('last-update').textContent = 
+                    `Updated ${date.toLocaleTimeString()}`;
+            }
+        }
+
+        function updateDevice(elementId, isOn) {
+            const el = document.getElementById(elementId);
+            if (el) {
+                el.classList.toggle('on', isOn);
+                el.classList.toggle('off', !isOn);
+            }
+        }
+
+        function refreshWebcam() {
+            const img = document.getElementById('webcam-img');
+            const placeholder = document.getElementById('webcam-placeholder');
+            
+            const newImg = new Image();
+            newImg.onload = function() {
+                img.src = this.src;
+                img.style.display = 'block';
+                placeholder.style.display = 'none';
+            };
+            newImg.onerror = function() {
+                img.style.display = 'none';
+                placeholder.style.display = 'block';
+                placeholder.innerHTML = '<p>📷 Webcam unavailable</p>';
+            };
+            newImg.src = `${API_BASE}get_webcam.php?t=${Date.now()}`;
+        }
+
+        // Initial load
+        fetchStatus();
+        refreshWebcam();
+
+        // Auto-refresh every 2 minutes
+        setInterval(fetchStatus, 120000);
+        setInterval(refreshWebcam, 120000);
+    </script>
+</body>
+</html>
+
