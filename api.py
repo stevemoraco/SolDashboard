@@ -171,6 +171,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Sol Dashboard API", lifespan=lifespan)
 
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
+
 @app.get("/api/sensors/latest")
 def get_latest_sensors(db: Session = Depends(get_db)):
     reading = db.query(SensorReading).order_by(desc(SensorReading.timestamp)).first()
