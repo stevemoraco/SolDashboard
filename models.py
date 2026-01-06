@@ -69,3 +69,11 @@ class HourlyAggregate(Base):
     max_temp = Column(Float, nullable=True)
     light_uptime_pct = Column(Float, nullable=True)
     heat_uptime_pct = Column(Float, nullable=True)
+
+class LikeEvent(Base):
+    __tablename__ = "like_events"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+    source = Column(String(100), nullable=True)
+    message = Column(Text, nullable=True)

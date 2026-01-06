@@ -12,8 +12,10 @@ from sqlalchemy import func, desc
 from sqlalchemy.orm import Session
 from apscheduler.schedulers.background import BackgroundScheduler
 
+from fastapi.responses import JSONResponse
+
 from database import engine, Base, get_db, SessionLocal
-from models import SensorReading, DeviceState, AIOutput, CoinMetric, HourlyAggregate
+from models import SensorReading, DeviceState, AIOutput, CoinMetric, HourlyAggregate, LikeEvent
 
 EXTERNAL_API_BASE = "https://autoncorp.com/biodome/"
 PUMPFUN_API = "https://frontend-api-v3.pump.fun/coins/jk1T35eWK41MBMM8AWoYVaNbjHEEQzMDetTsfnqpump"
@@ -439,5 +441,38 @@ def get_stats(db: Session = Depends(get_db)):
             "newest": newest_sensor.isoformat() if newest_sensor else None
         }
     }
+
+@app.post("/api/engagement/like")
+def add_like(message: str = "", db: Session = Depends(get_db)):
+    like = LikeEvent(
+        timestamp=datetime.utcnow(),
+        source="web",
+        message=message if message else None
+    )
+    db.add(like)
+    db.commit()
+    
+    total = db.query(func.count(LikeEvent.id)).scalar()
+    return {"success": True, "total_likes": total}
+
+@app.get("/api/engagement/count")
+def get_like_count(db: Session = Depends(get_db)):
+    total = db.query(func.count(LikeEvent.id)).scalar()
+    return {"total_likes": total}
+
+@app.get("/api/engagement/export")
+def export_likes(db: Session = Depends(get_db)):
+    likes = db.query(LikeEvent).order_by(LikeEvent.timestamp).all()
+    data = [{
+        "id": l.id,
+        "timestamp": l.timestamp.isoformat(),
+        "source": l.source,
+        "message": l.message
+    } for l in likes]
+    
+    return JSONResponse(
+        content={"likes": data, "total": len(data), "exported_at": datetime.utcnow().isoformat()},
+        headers={"Content-Disposition": "attachment; filename=sol_likes.json"}
+    )
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
