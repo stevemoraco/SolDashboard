@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Claude Biodome - Live Dashboard</title>
+    <title>Sol The Trophy Tomato - Live Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
         :root {
@@ -325,14 +327,278 @@
         .error {
             color: var(--accent-red);
         }
+
+        /* Markdown Output Styles */
+        .output-content h1, .output-content h2, .output-content h3 {
+            color: var(--accent-green);
+            margin: 0.5em 0 0.25em 0;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        .output-content h1 { font-size: 1.1rem; }
+        .output-content h2 { font-size: 1rem; }
+        .output-content h3 { font-size: 0.9rem; }
+        .output-content p { margin: 0.5em 0; }
+        .output-content strong { color: var(--accent-green); }
+        .output-content em { color: var(--accent-yellow); }
+        .output-content code {
+            background: rgba(74, 222, 128, 0.15);
+            padding: 0.1em 0.3em;
+            border-radius: 3px;
+            color: var(--accent-green);
+        }
+        .output-content ul, .output-content ol {
+            margin: 0.5em 0;
+            padding-left: 1.5em;
+        }
+        .output-content li { margin: 0.25em 0; }
+        .output-content blockquote {
+            border-left: 3px solid var(--accent-green);
+            padding-left: 1em;
+            margin: 0.5em 0;
+            color: var(--text-secondary);
+        }
+
+        /* Pump.fun Section */
+        .pumpfun-section {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, var(--bg-card) 0%, #111a18 100%);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            margin-top: 1rem;
+        }
+
+        .pumpfun-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(90deg, rgba(74, 222, 128, 0.1) 0%, transparent 100%);
+        }
+
+        .pumpfun-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--accent-green);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pumpfun-live-badge {
+            background: var(--accent-green);
+            color: var(--bg-dark);
+            font-size: 0.65rem;
+            padding: 0.2em 0.5em;
+            border-radius: 0.25rem;
+            font-weight: 700;
+            animation: pulse 2s infinite;
+        }
+
+        .token-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            padding: 1.25rem;
+        }
+
+        .metric-card {
+            background: var(--bg-dark);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.25rem;
+        }
+
+        .metric-change {
+            font-size: 0.7rem;
+            margin-top: 0.25rem;
+        }
+
+        .metric-change.positive { color: var(--accent-green); }
+        .metric-change.negative { color: var(--accent-red); }
+
+        /* Disclaimer */
+        .disclaimer {
+            padding: 1rem 1.25rem;
+            background: rgba(251, 191, 36, 0.1);
+            border-top: 1px solid rgba(251, 191, 36, 0.3);
+            font-size: 0.8rem;
+            color: var(--accent-yellow);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .disclaimer-icon {
+            font-size: 1.2rem;
+        }
+
+        /* CTA Button */
+        .cta-container {
+            padding: 1rem 1.25rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-green-dim) 100%);
+            color: var(--bg-dark);
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px rgba(74, 222, 128, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(74, 222, 128, 0.4);
+        }
+
+        /* Comments Section */
+        .comments-section {
+            grid-column: 1 / -1;
+            background: var(--bg-card);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            max-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .comments-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .comments-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .comment {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .comment:last-child {
+            border-bottom: none;
+        }
+
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-dark);
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .comment-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .comment-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.25rem;
+        }
+
+        .comment-username {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent-green);
+        }
+
+        .comment-time {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .comment-text {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .comment-likes {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .comment-likes.has-likes {
+            color: var(--accent-red);
+        }
+
+        /* Demo Mode Banner */
+        .demo-banner {
+            background: linear-gradient(90deg, var(--accent-yellow) 0%, #f59e0b 100%);
+            color: var(--bg-dark);
+            padding: 0.5rem 1rem;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* Mobile adjustments for new sections */
+        @media (max-width: 900px) {
+            .token-metrics {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Demo Mode Banner -->
+    <div id="demo-banner" class="demo-banner" style="display: none;">
+        DEMO MODE - Showing sample data. Connect to production server for live plant metrics.
+    </div>
+
     <header class="header">
         <div class="logo">
             <span class="logo-icon">🌱</span>
             <div>
-                <div class="logo-text">Claude</div>
+                <div class="logo-text">Sol The Trophy Tomato</div>
                 <div class="logo-sub">Powered by AutonCorp Verdant Autonomics</div>
             </div>
         </div>
@@ -440,6 +706,60 @@
                 </div>
             </section>
         </div>
+
+        <!-- Pump.fun Token Section -->
+        <section class="pumpfun-section">
+            <div class="pumpfun-header">
+                <div class="pumpfun-title">
+                    <span>📈 $SOL Token Metrics</span>
+                    <span class="pumpfun-live-badge" id="pumpfun-live-badge">LIVE</span>
+                </div>
+                <span class="section-title" id="pumpfun-update">Loading...</span>
+            </div>
+            <div class="token-metrics">
+                <div class="metric-card">
+                    <div class="metric-value" id="metric-mcap">--</div>
+                    <div class="metric-label">Market Cap</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="metric-holders">--</div>
+                    <div class="metric-label">Participants</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="metric-replies">--</div>
+                    <div class="metric-label">Comments</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="metric-ath">--</div>
+                    <div class="metric-label">ATH Market Cap</div>
+                </div>
+            </div>
+            <div class="disclaimer">
+                <span class="disclaimer-icon">⚠️</span>
+                <span>DISCLAIMER: $SOL is a community token created for fun. This is NOT financial advice. Always DYOR (Do Your Own Research). Cryptocurrency investments are highly volatile and you could lose your entire investment.</span>
+            </div>
+            <div class="cta-container">
+                <a href="https://pump.fun/coin/jk1T35eWK41MBMM8AWoYVaNbjHEEQzMDetTsfnqpump" target="_blank" class="cta-button">
+                    <span>🚀</span>
+                    <span>Contribute on Pump.fun</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Pump.fun Comments Section -->
+        <section class="comments-section">
+            <div class="comments-header">
+                <span class="section-title">💬 Community Chat (Pump.fun)</span>
+                <span class="section-title" id="comments-refresh">Auto-refresh: 30s</span>
+            </div>
+            <div id="comments-list" class="comments-list">
+                <div class="comment">
+                    <div class="comment-content">
+                        <div class="comment-text loading">Loading comments from pump.fun...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <footer class="footer">
@@ -450,40 +770,116 @@
 
     <script>
         const API_BASE = '';  // Same directory
+        const PUMPFUN_TOKEN = 'jk1T35eWK41MBMM8AWoYVaNbjHEEQzMDetTsfnqpump';
+        const PUMPFUN_API = 'https://frontend-api-v3.pump.fun';
+        let isDemoMode = false;
+
+        // Demo data for when backend isn't available
+        const DEMO_DATA = {
+            verdant_output: `## Daily Check-in - Sol's Growth Report
+
+Good morning! **Sol is thriving** today. The new compound leaves are developing beautifully.
+
+### Current Observations:
+- Leaf color: *Vibrant green*
+- New growth: \`3 new leaves emerging\`
+- Overall health: **Excellent**
+
+> "A tomato plant's happiness is measured in the unfurling of its leaves." - Verdant AI
+
+### Recommendations:
+1. Maintain current watering schedule
+2. VPD is optimal for transpiration
+3. Consider slight nutrient boost next week`,
+            sensors: {
+                air_temp: 24.5,
+                humidity: 65,
+                vpd: 0.85,
+                soil_moisture: 72,
+                co2: 850,
+                leaf_temp_delta: -1.2
+            },
+            devices: {
+                grow_light: true,
+                heat_mat: false,
+                circulation_fan: true,
+                exhaust_fan: false,
+                water_pump: false,
+                humidifier: true
+            },
+            sol_day: 42,
+            timestamp: new Date().toISOString()
+        };
+
+        // Format numbers for display
+        function formatNumber(num) {
+            if (num >= 1000000) return `$${(num / 1000000).toFixed(2)}M`;
+            if (num >= 1000) return `$${(num / 1000).toFixed(1)}K`;
+            return `$${num.toFixed(2)}`;
+        }
+
+        function formatCompactNumber(num) {
+            if (num >= 1000000) return `${(num / 1000000).toFixed(2)}M`;
+            if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+            return num.toString();
+        }
+
+        // Render markdown content
+        function renderMarkdown(text) {
+            if (typeof marked !== 'undefined') {
+                return marked.parse(text);
+            }
+            // Fallback: basic markdown support
+            return text
+                .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+                .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/`(.+?)`/g, '<code>$1</code>')
+                .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+                .replace(/^- (.+)$/gm, '<li>$1</li>')
+                .replace(/\n/g, '<br>');
+        }
 
         async function fetchStatus() {
             try {
                 const response = await fetch(`${API_BASE}get_status.php?t=${Date.now()}`);
                 if (!response.ok) throw new Error('Status not available');
-                
+
                 const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                isDemoMode = false;
+                document.getElementById('demo-banner').style.display = 'none';
                 updateDashboard(data);
             } catch (error) {
-                console.error('Failed to fetch status:', error);
-                document.getElementById('verdant-output').textContent = 'Waiting for Claude...';
-                document.getElementById('verdant-output').classList.add('loading');
+                console.log('Backend unavailable, using demo mode:', error.message);
+                isDemoMode = true;
+                document.getElementById('demo-banner').style.display = 'block';
+                updateDashboard(DEMO_DATA);
             }
         }
 
         function updateDashboard(data) {
-            // Update Verdant output
+            // Update Verdant output with Markdown rendering
             const outputEl = document.getElementById('verdant-output');
-            outputEl.textContent = data.verdant_output || 'No output available';
+            const rawOutput = data.verdant_output || 'No output available';
+            outputEl.innerHTML = renderMarkdown(rawOutput);
             outputEl.classList.remove('loading');
 
             // Update sensors
             if (data.sensors) {
-                document.getElementById('sensor-temp').textContent = 
+                document.getElementById('sensor-temp').textContent =
                     data.sensors.air_temp ? `${data.sensors.air_temp.toFixed(1)}°C` : '--';
-                document.getElementById('sensor-humidity').textContent = 
+                document.getElementById('sensor-humidity').textContent =
                     data.sensors.humidity ? `${data.sensors.humidity.toFixed(0)}%` : '--';
-                document.getElementById('sensor-vpd').textContent = 
+                document.getElementById('sensor-vpd').textContent =
                     data.sensors.vpd ? `${data.sensors.vpd.toFixed(2)}` : '--';
-                document.getElementById('sensor-soil').textContent = 
+                document.getElementById('sensor-soil').textContent =
                     data.sensors.soil_moisture ? `${data.sensors.soil_moisture.toFixed(0)}%` : '--';
-                document.getElementById('sensor-co2').textContent = 
+                document.getElementById('sensor-co2').textContent =
                     data.sensors.co2 ? `${Math.round(data.sensors.co2)}` : '--';
-                document.getElementById('sensor-leaf').textContent = 
+                document.getElementById('sensor-leaf').textContent =
                     data.sensors.leaf_temp_delta ? `${data.sensors.leaf_temp_delta.toFixed(1)}°` : '--';
             }
 
@@ -503,11 +899,9 @@
             }
 
             // Update timestamp
-            if (data.timestamp) {
-                const date = new Date(data.timestamp);
-                document.getElementById('last-update').textContent = 
-                    `Updated ${date.toLocaleTimeString()}`;
-            }
+            const date = data.timestamp ? new Date(data.timestamp) : new Date();
+            document.getElementById('last-update').textContent =
+                `Updated ${date.toLocaleTimeString()}`;
         }
 
         function updateDevice(elementId, isOn) {
@@ -521,7 +915,15 @@
         function refreshWebcam() {
             const img = document.getElementById('webcam-img');
             const placeholder = document.getElementById('webcam-placeholder');
-            
+
+            if (isDemoMode) {
+                // Use the pump.fun token thumbnail as placeholder in demo mode
+                img.src = `https://thumbnails.pump.fun/1904377/1767658059127.jpeg`;
+                img.style.display = 'block';
+                placeholder.style.display = 'none';
+                return;
+            }
+
             const newImg = new Image();
             newImg.onload = function() {
                 img.src = this.src;
@@ -529,20 +931,139 @@
                 placeholder.style.display = 'none';
             };
             newImg.onerror = function() {
-                img.style.display = 'none';
-                placeholder.style.display = 'block';
-                placeholder.innerHTML = '<p>📷 Webcam unavailable</p>';
+                // Fallback to pump.fun thumbnail
+                img.src = `https://thumbnails.pump.fun/1904377/1767658059127.jpeg`;
+                img.style.display = 'block';
+                placeholder.style.display = 'none';
             };
             newImg.src = `${API_BASE}get_webcam.php?t=${Date.now()}`;
+        }
+
+        // Pump.fun API functions
+        async function fetchPumpFunData() {
+            try {
+                const response = await fetch(`${PUMPFUN_API}/coins/${PUMPFUN_TOKEN}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Origin': 'https://pump.fun'
+                    }
+                });
+
+                if (!response.ok) throw new Error('Pump.fun API error');
+                const data = await response.json();
+                updatePumpFunMetrics(data);
+            } catch (error) {
+                console.error('Failed to fetch pump.fun data:', error);
+                document.getElementById('pumpfun-update').textContent = 'API unavailable';
+            }
+        }
+
+        function updatePumpFunMetrics(data) {
+            // Market cap
+            document.getElementById('metric-mcap').textContent = formatNumber(data.usd_market_cap || 0);
+
+            // Participants/holders
+            document.getElementById('metric-holders').textContent = data.num_participants || '--';
+
+            // Reply count
+            document.getElementById('metric-replies').textContent = formatCompactNumber(data.reply_count || 0);
+
+            // ATH Market Cap
+            document.getElementById('metric-ath').textContent = formatNumber(data.ath_market_cap || 0);
+
+            // Live badge
+            const liveBadge = document.getElementById('pumpfun-live-badge');
+            if (data.is_currently_live) {
+                liveBadge.textContent = 'LIVE';
+                liveBadge.style.background = 'var(--accent-green)';
+            } else {
+                liveBadge.textContent = 'GRADUATED';
+                liveBadge.style.background = 'var(--accent-blue)';
+            }
+
+            // Update timestamp
+            document.getElementById('pumpfun-update').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+        }
+
+        async function fetchPumpFunComments() {
+            try {
+                const response = await fetch(`${PUMPFUN_API}/replies/${PUMPFUN_TOKEN}?limit=15&offset=0`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Origin': 'https://pump.fun'
+                    }
+                });
+
+                if (!response.ok) throw new Error('Comments API error');
+                const data = await response.json();
+                updateComments(data.replies || []);
+            } catch (error) {
+                console.error('Failed to fetch comments:', error);
+                document.getElementById('comments-list').innerHTML =
+                    '<div class="comment"><div class="comment-content"><div class="comment-text error">Failed to load comments</div></div></div>';
+            }
+        }
+
+        function updateComments(replies) {
+            const container = document.getElementById('comments-list');
+
+            if (!replies.length) {
+                container.innerHTML = '<div class="comment"><div class="comment-content"><div class="comment-text">No comments yet</div></div></div>';
+                return;
+            }
+
+            // Sort by timestamp descending (newest first)
+            replies.sort((a, b) => b.timestamp - a.timestamp);
+
+            container.innerHTML = replies.map(reply => {
+                const username = reply.username || reply.user.slice(0, 8) + '...';
+                const timeAgo = getTimeAgo(reply.timestamp);
+                const avatarHtml = reply.profile_image
+                    ? `<img src="${reply.profile_image}" alt="${username}" onerror="this.parentElement.innerHTML='🌱'">`
+                    : '🌱';
+                const likesClass = reply.total_likes > 0 ? 'has-likes' : '';
+
+                return `
+                    <div class="comment">
+                        <div class="comment-avatar">${avatarHtml}</div>
+                        <div class="comment-content">
+                            <div class="comment-header">
+                                <span class="comment-username">${escapeHtml(username)}</span>
+                                <span class="comment-time">${timeAgo}</span>
+                            </div>
+                            <div class="comment-text">${escapeHtml(reply.text)}</div>
+                            ${reply.total_likes > 0 ? `<div class="comment-likes ${likesClass}">❤️ ${reply.total_likes}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getTimeAgo(timestamp) {
+            const seconds = Math.floor((Date.now() - timestamp) / 1000);
+            if (seconds < 60) return 'just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            return `${Math.floor(seconds / 86400)}d ago`;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // Initial load
         fetchStatus();
         refreshWebcam();
+        fetchPumpFunData();
+        fetchPumpFunComments();
 
-        // Auto-refresh every 2 minutes
-        setInterval(fetchStatus, 120000);
-        setInterval(refreshWebcam, 120000);
+        // Auto-refresh intervals
+        setInterval(fetchStatus, 120000);          // Plant status: 2 minutes
+        setInterval(refreshWebcam, 120000);        // Webcam: 2 minutes
+        setInterval(fetchPumpFunData, 30000);      // Pump.fun metrics: 30 seconds
+        setInterval(fetchPumpFunComments, 30000);  // Comments: 30 seconds
     </script>
 </body>
 </html>
