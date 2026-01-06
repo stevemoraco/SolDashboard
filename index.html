@@ -938,48 +938,58 @@
         // Fetch functions
         async function fetchStatus() {
             try {
-                const response = await fetch(`${API_BASE}/status?t=${Date.now()}`);
-                if (!response.ok) throw new Error('Status unavailable');
+                // Fetch sensors, devices, and AI output in parallel
+                const [sensorsRes, devicesRes, aiRes] = await Promise.all([
+                    fetch(`${API_BASE}/sensors/latest`),
+                    fetch(`${API_BASE}/devices/latest`),
+                    fetch(`${API_BASE}/ai/latest`)
+                ]);
 
-                const data = await response.json();
-                lastSensorData = data;
+                const sensors = sensorsRes.ok ? await sensorsRes.json() : null;
+                const devices = devicesRes.ok ? await devicesRes.json() : null;
+                const ai = aiRes.ok ? await aiRes.json() : null;
+
+                lastSensorData = sensors;
 
                 // Update Verdant output
                 const outputEl = document.getElementById('verdant-output');
-                outputEl.innerHTML = renderMarkdown(data.verdant_output || 'No output available');
-                outputEl.classList.remove('loading');
-
-                // Update sensors
-                if (data.sensors) {
-                    document.getElementById('sensor-temp').textContent = data.sensors.air_temp ? `${data.sensors.air_temp.toFixed(1)}°C` : '--';
-                    document.getElementById('sensor-humidity').textContent = data.sensors.humidity ? `${data.sensors.humidity.toFixed(0)}%` : '--';
-                    document.getElementById('sensor-vpd').textContent = data.sensors.vpd ? data.sensors.vpd.toFixed(2) : '--';
-                    document.getElementById('sensor-soil').textContent = data.sensors.soil_moisture ? `${data.sensors.soil_moisture.toFixed(0)}%` : '--';
-                    document.getElementById('sensor-co2').textContent = data.sensors.co2 ? Math.round(data.sensors.co2) : '--';
-                    document.getElementById('sensor-leaf').textContent = data.sensors.leaf_temp_delta ? `${data.sensors.leaf_temp_delta.toFixed(1)}°` : '--';
-
-                    updateHealthScore(data.sensors);
-                    if (data.sensors.vpd) updateVPDGauge(data.sensors.vpd);
+                if (ai && ai.output_text) {
+                    outputEl.innerHTML = renderMarkdown(ai.output_text);
+                    outputEl.classList.remove('loading');
                 }
 
-                // Update devices
-                if (data.devices) {
-                    updateDevice('device-light', 'card-light', data.devices.grow_light);
-                    updateDevice('device-heat', 'card-heat', data.devices.heat_mat);
-                    updateDevice('device-fan', 'card-fan', data.devices.circulation_fan);
-                    updateDevice('device-exhaust', 'card-exhaust', data.devices.exhaust_fan);
-                    updateDevice('device-pump', 'card-pump', data.devices.water_pump);
-                    updateDevice('device-humid', 'card-humid', data.devices.humidifier);
+                // Update sensors (data is flat, not nested)
+                if (sensors && !sensors.error) {
+                    document.getElementById('sensor-temp').textContent = sensors.air_temp ? `${sensors.air_temp.toFixed(1)}°C` : '--';
+                    document.getElementById('sensor-humidity').textContent = sensors.humidity ? `${sensors.humidity.toFixed(0)}%` : '--';
+                    document.getElementById('sensor-vpd').textContent = sensors.vpd ? sensors.vpd.toFixed(2) : '--';
+                    document.getElementById('sensor-soil').textContent = sensors.soil_moisture ? `${sensors.soil_moisture.toFixed(0)}%` : '--';
+                    document.getElementById('sensor-co2').textContent = sensors.co2 ? Math.round(sensors.co2) : '--';
+                    document.getElementById('sensor-leaf').textContent = sensors.leaf_temp_delta ? `${sensors.leaf_temp_delta.toFixed(1)}°` : '--';
+
+                    updateHealthScore(sensors);
+                    if (sensors.vpd) updateVPDGauge(sensors.vpd);
                 }
 
-                // Update day
-                if (data.sol_day) {
-                    document.getElementById('sol-day').textContent = `Day ${data.sol_day}`;
-                    updateGrowthTimeline(data.sol_day);
+                // Update devices (data is flat, not nested)
+                if (devices && !devices.error) {
+                    updateDevice('device-light', 'card-light', devices.grow_light);
+                    updateDevice('device-heat', 'card-heat', devices.heat_mat);
+                    updateDevice('device-fan', 'card-fan', devices.circulation_fan);
+                    updateDevice('device-exhaust', 'card-exhaust', devices.exhaust_fan);
+                    updateDevice('device-pump', 'card-pump', devices.water_pump);
+                    updateDevice('device-humid', 'card-humid', devices.humidifier);
+                }
+
+                // Update day from AI output
+                if (ai && ai.sol_day) {
+                    document.getElementById('sol-day').textContent = `Day ${ai.sol_day}`;
+                    updateGrowthTimeline(ai.sol_day);
                 }
 
                 // Update timestamp
-                const date = data.timestamp ? new Date(data.timestamp) : new Date();
+                const timestamp = sensors?.timestamp || ai?.timestamp || new Date().toISOString();
+                const date = new Date(timestamp);
                 document.getElementById('last-update').textContent = `Updated ${date.toLocaleTimeString()}`;
 
             } catch (error) {
