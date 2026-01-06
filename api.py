@@ -7,7 +7,7 @@ import numpy as np
 
 from fastapi import FastAPI, Depends, Query, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy import func, desc
 from sqlalchemy.orm import Session
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -17,8 +17,13 @@ from fastapi.responses import JSONResponse
 from database import engine, Base, get_db, SessionLocal
 from models import SensorReading, DeviceState, AIOutput, CoinMetric, HourlyAggregate, LikeEvent
 
+import object_storage
+
 EXTERNAL_API_BASE = "https://autoncorp.com/biodome/"
+WEBCAM_URL = f"{EXTERNAL_API_BASE}get_webcam.php"
 PUMPFUN_API = "https://frontend-api-v3.pump.fun/coins/jk1T35eWK41MBMM8AWoYVaNbjHEEQzMDetTsfnqpump"
+
+latest_webcam_frame_path: Optional[str] = None
 
 scheduler = BackgroundScheduler()
 
@@ -153,6 +158,34 @@ def compute_hourly_aggregates():
     finally:
         db.close()
 
+def fetch_and_store_webcam_frame():
+    global latest_webcam_frame_path
+    try:
+        with httpx.Client(timeout=30) as client:
+            response = client.get(WEBCAM_URL)
+            if response.status_code == 200:
+                content_type = response.headers.get("content-type", "image/jpeg")
+                if "image" in content_type:
+                    now = datetime.utcnow()
+                    filename = f"webcam/frame_{now.strftime('%Y-%m-%d_%H-%M-%S')}.jpg"
+                    
+                    try:
+                        path = object_storage.save_file(
+                            content=response.content,
+                            object_path=filename,
+                            content_type="image/jpeg"
+                        )
+                        latest_webcam_frame_path = path
+                        print(f"[{datetime.now()}] Stored webcam frame: {filename}")
+                    except Exception as storage_error:
+                        print(f"Error saving webcam frame to storage: {storage_error}")
+                else:
+                    print(f"Webcam response is not an image: {content_type}")
+            else:
+                print(f"Webcam fetch failed with status: {response.status_code}")
+    except Exception as e:
+        print(f"Error fetching webcam frame: {e}")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
@@ -160,10 +193,12 @@ async def lifespan(app: FastAPI):
     scheduler.add_job(fetch_and_store_plant_data, 'interval', minutes=2, id='plant_data')
     scheduler.add_job(fetch_and_store_coin_data, 'interval', minutes=5, id='coin_data')
     scheduler.add_job(compute_hourly_aggregates, 'interval', minutes=10, id='aggregates')
+    scheduler.add_job(fetch_and_store_webcam_frame, 'interval', minutes=2, id='webcam_frame')
     scheduler.start()
     
     fetch_and_store_plant_data()
     fetch_and_store_coin_data()
+    fetch_and_store_webcam_frame()
     
     yield
     
@@ -478,5 +513,78 @@ def export_likes(db: Session = Depends(get_db)):
         content={"likes": data, "total": len(data), "exported_at": datetime.utcnow().isoformat()},
         headers={"Content-Disposition": "attachment; filename=sol_likes.json"}
     )
+
+@app.get("/api/webcam/latest")
+def get_latest_webcam():
+    global latest_webcam_frame_path
+    if not latest_webcam_frame_path:
+        try:
+            frames = object_storage.list_files("webcam/")
+            if frames:
+                latest_webcam_frame_path = frames[0]["path"]
+        except Exception as e:
+            return {"error": f"No webcam frames available: {e}"}
+    
+    if not latest_webcam_frame_path:
+        return {"error": "No webcam frames available"}
+    
+    try:
+        signed_url = object_storage.get_signed_url(latest_webcam_frame_path, ttl_sec=3600)
+        public_url = object_storage.get_public_url(latest_webcam_frame_path)
+        return {
+            "path": latest_webcam_frame_path,
+            "signed_url": signed_url,
+            "public_url": public_url,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        return {"error": f"Failed to get webcam URL: {e}"}
+
+@app.get("/api/webcam/frames")
+def list_webcam_frames(limit: int = Query(100, ge=1, le=1000)):
+    try:
+        frames = object_storage.list_files("webcam/")
+        frames = frames[:limit]
+        
+        result = []
+        for frame in frames:
+            try:
+                signed_url = object_storage.get_signed_url(frame["path"], ttl_sec=3600)
+                result.append({
+                    "path": frame["path"],
+                    "signed_url": signed_url,
+                    "size": frame.get("size"),
+                    "updated": frame.get("updated")
+                })
+            except:
+                result.append({
+                    "path": frame["path"],
+                    "size": frame.get("size"),
+                    "updated": frame.get("updated")
+                })
+        
+        return {"frames": result, "count": len(result)}
+    except Exception as e:
+        return {"error": f"Failed to list frames: {e}", "frames": [], "count": 0}
+
+@app.get("/api/webcam/og-image")
+def get_og_image():
+    global latest_webcam_frame_path
+    if not latest_webcam_frame_path:
+        try:
+            frames = object_storage.list_files("webcam/")
+            if frames:
+                latest_webcam_frame_path = frames[0]["path"]
+        except:
+            pass
+    
+    if latest_webcam_frame_path:
+        try:
+            signed_url = object_storage.get_signed_url(latest_webcam_frame_path, ttl_sec=86400)
+            return RedirectResponse(url=signed_url, status_code=302)
+        except:
+            pass
+    
+    return RedirectResponse(url=f"{EXTERNAL_API_BASE}get_webcam.php", status_code=302)
 
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
