@@ -1,19 +1,7 @@
 #!/usr/bin/env python3
-"""Simple HTTP server to serve the static dashboard."""
+"""FastAPI server for Sol Dashboard with data collection and analytics."""
 
-import http.server
-import socketserver
+import uvicorn
 
-PORT = 5000
-HOST = "0.0.0.0"
-
-class NoCacheHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
-    def end_headers(self):
-        self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
-        self.send_header('Pragma', 'no-cache')
-        self.send_header('Expires', '0')
-        super().end_headers()
-
-with socketserver.TCPServer((HOST, PORT), NoCacheHTTPRequestHandler) as httpd:
-    print(f"Serving at http://{HOST}:{PORT}")
-    httpd.serve_forever()
+if __name__ == "__main__":
+    uvicorn.run("api:app", host="0.0.0.0", port=5000, reload=False)

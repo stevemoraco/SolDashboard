@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Marked.js for Markdown rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Chart.js for analytics charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         :root {
@@ -497,9 +499,152 @@
             font-weight: 600;
         }
 
+        /* Trends & Analytics Section */
+        .trends-section {
+            grid-column: 1 / -1;
+            background: var(--bg-card);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            margin-top: 0.5rem;
+        }
+
+        .trends-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .chart-container {
+            background: var(--bg-dark);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            height: 280px;
+        }
+
+        .trends-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .trend-card {
+            background: var(--bg-dark);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .trend-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.25rem;
+        }
+
+        .trend-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .trend-direction {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+        }
+
+        .trend-direction.rising {
+            background: rgba(74, 222, 128, 0.2);
+            color: var(--accent-green);
+        }
+
+        .trend-direction.falling {
+            background: rgba(248, 113, 113, 0.2);
+            color: var(--accent-red);
+        }
+
+        .trend-direction.stable {
+            background: rgba(96, 165, 250, 0.2);
+            color: var(--accent-blue);
+        }
+
+        .trend-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .trend-avg {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .predictions-section {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, var(--bg-card) 0%, #111518 100%);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            margin-top: 0.5rem;
+        }
+
+        .predictions-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .prediction-card {
+            background: var(--bg-dark);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .prediction-current {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .prediction-arrow {
+            font-size: 1.25rem;
+            margin: 0.25rem 0;
+        }
+
+        .prediction-future {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .prediction-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 0.25rem;
+        }
+
+        .db-stats {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            padding: 0.5rem 1.25rem;
+            border-top: 1px solid var(--border);
+        }
+
         /* Mobile adjustments for new sections */
         @media (max-width: 900px) {
             .token-metrics {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .trends-grid {
+                grid-template-columns: 1fr;
+            }
+            .predictions-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
@@ -624,6 +769,88 @@
             </section>
         </div>
 
+        <!-- Trends & Analytics Section -->
+        <section class="trends-section">
+            <div class="section-header">
+                <span class="section-title">📈 Trends & Analytics (24h)</span>
+                <span id="trends-update" style="font-size: 0.75rem; color: var(--text-muted);">Loading...</span>
+            </div>
+            <div class="trends-grid">
+                <div class="chart-container">
+                    <canvas id="sensor-chart"></canvas>
+                </div>
+                <div class="trends-sidebar">
+                    <div class="trend-card">
+                        <div class="trend-header">
+                            <span class="trend-label">Temperature</span>
+                            <span id="trend-temp-dir" class="trend-direction stable">--</span>
+                        </div>
+                        <div class="trend-value" id="trend-temp-val">--°C</div>
+                        <div class="trend-avg" id="trend-temp-avg">Avg: --°C</div>
+                    </div>
+                    <div class="trend-card">
+                        <div class="trend-header">
+                            <span class="trend-label">Humidity</span>
+                            <span id="trend-hum-dir" class="trend-direction stable">--</span>
+                        </div>
+                        <div class="trend-value" id="trend-hum-val">--%</div>
+                        <div class="trend-avg" id="trend-hum-avg">Avg: --%</div>
+                    </div>
+                    <div class="trend-card">
+                        <div class="trend-header">
+                            <span class="trend-label">VPD</span>
+                            <span id="trend-vpd-dir" class="trend-direction stable">--</span>
+                        </div>
+                        <div class="trend-value" id="trend-vpd-val">--</div>
+                        <div class="trend-avg" id="trend-vpd-avg">Avg: --</div>
+                    </div>
+                    <div class="trend-card">
+                        <div class="trend-header">
+                            <span class="trend-label">Soil Moisture</span>
+                            <span id="trend-soil-dir" class="trend-direction stable">--</span>
+                        </div>
+                        <div class="trend-value" id="trend-soil-val">--%</div>
+                        <div class="trend-avg" id="trend-soil-avg">Avg: --%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="db-stats" id="db-stats">Database: Loading stats...</div>
+        </section>
+
+        <!-- Predictions Section -->
+        <section class="predictions-section">
+            <div class="section-header">
+                <span class="section-title">🔮 6-Hour Predictions</span>
+                <span id="pred-confidence" style="font-size: 0.7rem; color: var(--text-muted);">--</span>
+            </div>
+            <div class="predictions-grid">
+                <div class="prediction-card">
+                    <div class="prediction-current" id="pred-temp-now">Now: --°C</div>
+                    <div class="prediction-arrow">→</div>
+                    <div class="prediction-future" id="pred-temp-future">--°C</div>
+                    <div class="prediction-label">Temperature</div>
+                </div>
+                <div class="prediction-card">
+                    <div class="prediction-current" id="pred-hum-now">Now: --%</div>
+                    <div class="prediction-arrow">→</div>
+                    <div class="prediction-future" id="pred-hum-future">--%</div>
+                    <div class="prediction-label">Humidity</div>
+                </div>
+                <div class="prediction-card">
+                    <div class="prediction-current" id="pred-vpd-now">Now: --</div>
+                    <div class="prediction-arrow">→</div>
+                    <div class="prediction-future" id="pred-vpd-future">--</div>
+                    <div class="prediction-label">VPD</div>
+                </div>
+                <div class="prediction-card">
+                    <div class="prediction-current" id="pred-soil-now">Now: --%</div>
+                    <div class="prediction-arrow">→</div>
+                    <div class="prediction-future" id="pred-soil-future">--%</div>
+                    <div class="prediction-label">Soil Moisture</div>
+                </div>
+            </div>
+        </section>
+
         <!-- Pump.fun Token Section -->
         <section class="pumpfun-section">
             <div class="pumpfun-header">
@@ -678,47 +905,11 @@
     </footer>
 
     <script>
-        const API_BASE = 'https://autoncorp.com/biodome/';  // Production server
+        const EXTERNAL_API = 'https://autoncorp.com/biodome/';
+        const LOCAL_API = '/api/';
         let isDemoMode = false;
+        let sensorChart = null;
 
-        // Demo data for when backend isn't available
-        const DEMO_DATA = {
-            verdant_output: `## Daily Check-in - Sol's Growth Report
-
-Good morning! **Sol is thriving** today. The new compound leaves are developing beautifully.
-
-### Current Observations:
-- Leaf color: *Vibrant green*
-- New growth: \`3 new leaves emerging\`
-- Overall health: **Excellent**
-
-> "A tomato plant's happiness is measured in the unfurling of its leaves." - Verdant AI
-
-### Recommendations:
-1. Maintain current watering schedule
-2. VPD is optimal for transpiration
-3. Consider slight nutrient boost next week`,
-            sensors: {
-                air_temp: 24.5,
-                humidity: 65,
-                vpd: 0.85,
-                soil_moisture: 72,
-                co2: 850,
-                leaf_temp_delta: -1.2
-            },
-            devices: {
-                grow_light: true,
-                heat_mat: false,
-                circulation_fan: true,
-                exhaust_fan: false,
-                water_pump: false,
-                humidifier: true
-            },
-            sol_day: 42,
-            timestamp: new Date().toISOString()
-        };
-
-        // Format numbers for display
         function formatNumber(num) {
             if (num >= 1000000) return `$${(num / 1000000).toFixed(2)}M`;
             if (num >= 1000) return `$${(num / 1000).toFixed(1)}K`;
@@ -731,12 +922,10 @@ Good morning! **Sol is thriving** today. The new compound leaves are developing 
             return num.toString();
         }
 
-        // Render markdown content
         function renderMarkdown(text) {
             if (typeof marked !== 'undefined') {
                 return marked.parse(text);
             }
-            // Fallback: basic markdown support
             return text
                 .replace(/^### (.+)$/gm, '<h3>$1</h3>')
                 .replace(/^## (.+)$/gm, '<h2>$1</h2>')
@@ -751,30 +940,45 @@ Good morning! **Sol is thriving** today. The new compound leaves are developing 
 
         async function fetchStatus() {
             try {
-                const response = await fetch(`${API_BASE}get_status.php?t=${Date.now()}`);
+                const response = await fetch(`${EXTERNAL_API}get_status.php?t=${Date.now()}`);
                 if (!response.ok) throw new Error('Status not available');
-
                 const data = await response.json();
                 if (data.error) throw new Error(data.error);
                 isDemoMode = false;
                 document.getElementById('demo-banner').style.display = 'none';
                 updateDashboard(data);
             } catch (error) {
-                console.log('Backend unavailable, using demo mode:', error.message);
-                isDemoMode = true;
-                document.getElementById('demo-banner').style.display = 'block';
-                updateDashboard(DEMO_DATA);
+                console.log('External API unavailable, trying local:', error.message);
+                try {
+                    const localRes = await fetch(`${LOCAL_API}sensors/latest`);
+                    if (localRes.ok) {
+                        const sensors = await localRes.json();
+                        const devRes = await fetch(`${LOCAL_API}devices/latest`);
+                        const devices = devRes.ok ? await devRes.json() : {};
+                        const aiRes = await fetch(`${LOCAL_API}ai/latest`);
+                        const ai = aiRes.ok ? await aiRes.json() : {};
+                        updateDashboard({
+                            sensors: sensors,
+                            devices: devices,
+                            verdant_output: ai.output_text || '',
+                            sol_day: ai.sol_day,
+                            timestamp: sensors.timestamp
+                        });
+                        isDemoMode = false;
+                        document.getElementById('demo-banner').style.display = 'none';
+                    }
+                } catch (e) {
+                    console.log('Local API also unavailable');
+                }
             }
         }
 
         function updateDashboard(data) {
-            // Update Verdant output with Markdown rendering
             const outputEl = document.getElementById('verdant-output');
             const rawOutput = data.verdant_output || 'No output available';
             outputEl.innerHTML = renderMarkdown(rawOutput);
             outputEl.classList.remove('loading');
 
-            // Update sensors
             if (data.sensors) {
                 document.getElementById('sensor-temp').textContent =
                     data.sensors.air_temp ? `${data.sensors.air_temp.toFixed(1)}°C` : '--';
@@ -790,7 +994,6 @@ Good morning! **Sol is thriving** today. The new compound leaves are developing 
                     data.sensors.leaf_temp_delta ? `${data.sensors.leaf_temp_delta.toFixed(1)}°` : '--';
             }
 
-            // Update devices
             if (data.devices) {
                 updateDevice('device-light', data.devices.grow_light);
                 updateDevice('device-heat', data.devices.heat_mat);
@@ -800,15 +1003,12 @@ Good morning! **Sol is thriving** today. The new compound leaves are developing 
                 updateDevice('device-humid', data.devices.humidifier);
             }
 
-            // Update Sol's day
             if (data.sol_day) {
                 document.getElementById('sol-day').textContent = `Day ${data.sol_day}`;
             }
 
-            // Update timestamp
             const date = data.timestamp ? new Date(data.timestamp) : new Date();
-            document.getElementById('last-update').textContent =
-                `Updated ${date.toLocaleTimeString()}`;
+            document.getElementById('last-update').textContent = `Updated ${date.toLocaleTimeString()}`;
         }
 
         function updateDevice(elementId, isOn) {
@@ -823,14 +1023,6 @@ Good morning! **Sol is thriving** today. The new compound leaves are developing 
             const img = document.getElementById('webcam-img');
             const placeholder = document.getElementById('webcam-placeholder');
 
-            if (isDemoMode) {
-                // Use the pump.fun token thumbnail as placeholder in demo mode
-                img.src = `https://thumbnails.pump.fun/1904377/1767658059127.jpeg`;
-                img.style.display = 'block';
-                placeholder.style.display = 'none';
-                return;
-            }
-
             const newImg = new Image();
             newImg.onload = function() {
                 img.src = this.src;
@@ -838,52 +1030,44 @@ Good morning! **Sol is thriving** today. The new compound leaves are developing 
                 placeholder.style.display = 'none';
             };
             newImg.onerror = function() {
-                // Fallback to pump.fun thumbnail
                 img.src = `https://thumbnails.pump.fun/1904377/1767658059127.jpeg`;
                 img.style.display = 'block';
                 placeholder.style.display = 'none';
             };
-            newImg.src = `${API_BASE}get_webcam.php?t=${Date.now()}`;
+            newImg.src = `${EXTERNAL_API}get_webcam.php?t=${Date.now()}`;
         }
 
-        // Pump.fun API functions - uses PHP proxy to avoid CORS
         async function fetchPumpFunData() {
             try {
-                // Use PHP proxy on same domain to avoid CORS
-                const response = await fetch(`${API_BASE}get_pumpfun.php?t=${Date.now()}`);
-
-                if (!response.ok) throw new Error('Pump.fun API error');
+                const response = await fetch(`${LOCAL_API}coin/latest`);
+                if (!response.ok) throw new Error('Coin API error');
                 const data = await response.json();
-
                 if (data.error) throw new Error(data.error);
-
                 updatePumpFunMetrics(data);
             } catch (error) {
-                console.error('Failed to fetch pump.fun data:', error);
-                document.getElementById('pumpfun-update').textContent = 'API unavailable';
-
-                // Show dashes when unavailable
-                document.getElementById('metric-mcap').textContent = '--';
-                document.getElementById('metric-holders').textContent = '--';
-                document.getElementById('metric-replies').textContent = '--';
-                document.getElementById('metric-ath').textContent = '--';
+                console.log('Local coin API unavailable, trying external');
+                try {
+                    const extRes = await fetch(`${EXTERNAL_API}get_pumpfun.php?t=${Date.now()}`);
+                    if (extRes.ok) {
+                        const data = await extRes.json();
+                        updatePumpFunMetrics(data);
+                    }
+                } catch (e) {
+                    document.getElementById('pumpfun-update').textContent = 'API unavailable';
+                    document.getElementById('metric-mcap').textContent = '--';
+                    document.getElementById('metric-holders').textContent = '--';
+                    document.getElementById('metric-replies').textContent = '--';
+                    document.getElementById('metric-ath').textContent = '--';
+                }
             }
         }
 
         function updatePumpFunMetrics(data) {
-            // Market cap
             document.getElementById('metric-mcap').textContent = formatNumber(data.usd_market_cap || 0);
-
-            // Participants/holders
-            document.getElementById('metric-holders').textContent = data.num_participants || '--';
-
-            // Reply count
-            document.getElementById('metric-replies').textContent = formatCompactNumber(data.reply_count || 0);
-
-            // ATH Market Cap
+            document.getElementById('metric-holders').textContent = data.holders || data.num_participants || '--';
+            document.getElementById('metric-replies').textContent = formatCompactNumber(data.replies || data.reply_count || 0);
             document.getElementById('metric-ath').textContent = formatNumber(data.ath_market_cap || 0);
 
-            // Live badge
             const liveBadge = document.getElementById('pumpfun-live-badge');
             if (data.is_currently_live) {
                 liveBadge.textContent = 'LIVE';
@@ -892,20 +1076,189 @@ Good morning! **Sol is thriving** today. The new compound leaves are developing 
                 liveBadge.textContent = 'GRADUATED';
                 liveBadge.style.background = 'var(--accent-blue)';
             }
-
-            // Update timestamp
             document.getElementById('pumpfun-update').textContent = `Updated ${new Date().toLocaleTimeString()}`;
         }
 
-        // Initial load
+        async function fetchTrends() {
+            try {
+                const response = await fetch(`${LOCAL_API}analytics/trends?hours=24`);
+                if (!response.ok) throw new Error('Trends API error');
+                const data = await response.json();
+                if (data.error) {
+                    document.getElementById('trends-update').textContent = data.error;
+                    return;
+                }
+                updateTrends(data);
+            } catch (error) {
+                console.log('Trends fetch error:', error);
+                document.getElementById('trends-update').textContent = 'Collecting data...';
+            }
+        }
+
+        function updateTrends(data) {
+            function setTrend(prefix, metric) {
+                if (!metric) return;
+                document.getElementById(`trend-${prefix}-val`).textContent = 
+                    metric.current != null ? (prefix === 'vpd' ? metric.current.toFixed(2) : `${metric.current.toFixed(1)}${prefix === 'temp' ? '°C' : '%'}`) : '--';
+                document.getElementById(`trend-${prefix}-avg`).textContent = 
+                    metric.avg != null ? `Avg: ${prefix === 'vpd' ? metric.avg.toFixed(2) : metric.avg.toFixed(1)}${prefix === 'temp' ? '°C' : (prefix === 'vpd' ? '' : '%')}` : 'Avg: --';
+                
+                const dirEl = document.getElementById(`trend-${prefix}-dir`);
+                if (metric.trend) {
+                    dirEl.textContent = metric.trend.direction.toUpperCase();
+                    dirEl.className = `trend-direction ${metric.trend.direction}`;
+                }
+            }
+            
+            setTrend('temp', data.temperature);
+            setTrend('hum', data.humidity);
+            setTrend('vpd', data.vpd);
+            setTrend('soil', data.soil_moisture);
+            
+            document.getElementById('trends-update').textContent = `${data.data_points} readings`;
+        }
+
+        async function fetchPredictions() {
+            try {
+                const response = await fetch(`${LOCAL_API}analytics/predictions?hours_ahead=6`);
+                if (!response.ok) throw new Error('Predictions API error');
+                const data = await response.json();
+                if (data.error) {
+                    document.getElementById('pred-confidence').textContent = data.error;
+                    return;
+                }
+                updatePredictions(data);
+            } catch (error) {
+                console.log('Predictions fetch error:', error);
+            }
+        }
+
+        function updatePredictions(data) {
+            const pred = data.predictions;
+            const curr = data.current;
+            
+            document.getElementById('pred-temp-now').textContent = curr.air_temp != null ? `Now: ${curr.air_temp.toFixed(1)}°C` : 'Now: --';
+            document.getElementById('pred-temp-future').textContent = pred.air_temp != null ? `${pred.air_temp.toFixed(1)}°C` : '--';
+            
+            document.getElementById('pred-hum-now').textContent = curr.humidity != null ? `Now: ${curr.humidity.toFixed(0)}%` : 'Now: --';
+            document.getElementById('pred-hum-future').textContent = pred.humidity != null ? `${pred.humidity.toFixed(0)}%` : '--';
+            
+            document.getElementById('pred-vpd-now').textContent = curr.vpd != null ? `Now: ${curr.vpd.toFixed(2)}` : 'Now: --';
+            document.getElementById('pred-vpd-future').textContent = pred.vpd != null ? `${pred.vpd.toFixed(2)}` : '--';
+            
+            document.getElementById('pred-soil-now').textContent = curr.soil_moisture != null ? `Now: ${curr.soil_moisture.toFixed(0)}%` : 'Now: --';
+            document.getElementById('pred-soil-future').textContent = pred.soil_moisture != null ? `${pred.soil_moisture.toFixed(0)}%` : '--';
+            
+            document.getElementById('pred-confidence').textContent = `Confidence: ${data.confidence} (${data.based_on_readings} readings)`;
+        }
+
+        async function fetchSensorHistory() {
+            try {
+                const response = await fetch(`${LOCAL_API}sensors/history?hours=24`);
+                if (!response.ok) throw new Error('History API error');
+                const data = await response.json();
+                if (data.length > 0) {
+                    renderChart(data);
+                }
+            } catch (error) {
+                console.log('History fetch error:', error);
+            }
+        }
+
+        function renderChart(data) {
+            const ctx = document.getElementById('sensor-chart').getContext('2d');
+            
+            const labels = data.map(d => new Date(d.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
+            const temps = data.map(d => d.air_temp);
+            const humidity = data.map(d => d.humidity);
+            const vpd = data.map(d => d.vpd ? d.vpd * 10 : null);
+            
+            if (sensorChart) {
+                sensorChart.destroy();
+            }
+            
+            sensorChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Temperature (°C)',
+                            data: temps,
+                            borderColor: '#4ade80',
+                            backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Humidity (%)',
+                            data: humidity,
+                            borderColor: '#60a5fa',
+                            backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'VPD (x10)',
+                            data: vpd,
+                            borderColor: '#fbbf24',
+                            backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { color: '#8ba88b', font: { size: 10 } }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#5a7a5a', maxTicksLimit: 8, font: { size: 9 } },
+                            grid: { color: '#1e3a1e' }
+                        },
+                        y: {
+                            ticks: { color: '#5a7a5a', font: { size: 9 } },
+                            grid: { color: '#1e3a1e' }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function fetchDbStats() {
+            try {
+                const response = await fetch(`${LOCAL_API}stats`);
+                if (!response.ok) throw new Error('Stats API error');
+                const data = await response.json();
+                const total = data.total_records;
+                document.getElementById('db-stats').textContent = 
+                    `Database: ${total.sensor_readings} sensor readings, ${total.coin_metrics} coin metrics, ${total.ai_outputs} AI outputs`;
+            } catch (error) {
+                document.getElementById('db-stats').textContent = 'Database: Initializing...';
+            }
+        }
+
         fetchStatus();
         refreshWebcam();
         fetchPumpFunData();
+        fetchTrends();
+        fetchPredictions();
+        fetchSensorHistory();
+        fetchDbStats();
 
-        // Auto-refresh intervals
-        setInterval(fetchStatus, 120000);          // Plant status: 2 minutes
-        setInterval(refreshWebcam, 120000);        // Webcam: 2 minutes
-        setInterval(fetchPumpFunData, 30000);      // Pump.fun metrics: 30 seconds
+        setInterval(fetchStatus, 120000);
+        setInterval(refreshWebcam, 120000);
+        setInterval(fetchPumpFunData, 60000);
+        setInterval(fetchTrends, 120000);
+        setInterval(fetchPredictions, 300000);
+        setInterval(fetchSensorHistory, 300000);
+        setInterval(fetchDbStats, 60000);
     </script>
 </body>
 </html>
