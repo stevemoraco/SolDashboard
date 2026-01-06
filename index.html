@@ -435,18 +435,29 @@
 
         /* Disclaimer */
         .disclaimer {
-            padding: 1rem 1.25rem;
-            background: rgba(251, 191, 36, 0.1);
-            border-top: 1px solid rgba(251, 191, 36, 0.3);
-            font-size: 0.8rem;
-            color: var(--accent-yellow);
+            padding: 1.25rem 1.5rem;
+            background: rgba(251, 191, 36, 0.15);
+            border-top: 2px solid rgba(251, 191, 36, 0.5);
+            border-bottom: 2px solid rgba(251, 191, 36, 0.5);
+            font-size: 0.85rem;
+            color: var(--text-primary);
             display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            align-items: flex-start;
+            gap: 1rem;
+            line-height: 1.6;
         }
 
         .disclaimer-icon {
-            font-size: 1.2rem;
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .disclaimer-text {
+            flex: 1;
+        }
+
+        .disclaimer-text strong {
+            color: var(--accent-yellow);
         }
 
         /* CTA Button */
@@ -474,100 +485,6 @@
         .cta-button:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 30px rgba(74, 222, 128, 0.4);
-        }
-
-        /* Comments Section */
-        .comments-section {
-            grid-column: 1 / -1;
-            background: var(--bg-card);
-            border-radius: 1rem;
-            border: 1px solid var(--border);
-            max-height: 400px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .comments-header {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .comments-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0.5rem;
-        }
-
-        .comment {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        .comment:last-child {
-            border-bottom: none;
-        }
-
-        .comment-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: var(--bg-dark);
-            flex-shrink: 0;
-            overflow: hidden;
-        }
-
-        .comment-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .comment-content {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .comment-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.25rem;
-        }
-
-        .comment-username {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--accent-green);
-        }
-
-        .comment-time {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-        }
-
-        .comment-text {
-            font-size: 0.85rem;
-            color: var(--text-primary);
-            line-height: 1.4;
-            word-break: break-word;
-        }
-
-        .comment-likes {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            margin-top: 0.25rem;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-        .comment-likes.has-likes {
-            color: var(--accent-red);
         }
 
         /* Demo Mode Banner */
@@ -736,7 +653,13 @@
             </div>
             <div class="disclaimer">
                 <span class="disclaimer-icon">⚠️</span>
-                <span>DISCLAIMER: $SOL is a community token created for fun. This is NOT financial advice. Always DYOR (Do Your Own Research). Cryptocurrency investments are highly volatile and you could lose your entire investment.</span>
+                <div class="disclaimer-text">
+                    <strong>DISCLAIMER:</strong> The Sol The Trophy Tomato (SOL) memecoin was created by the crypto community. Trading fees fund our research integrating AI into manufacturing and agriculture. This is an expensive experiment - building AI-controlled food systems requires significant resources.
+                    <br><br>
+                    Memecoins are high-risk, speculative assets. Most traders lose money. Only participate if you can afford to lose what you put in. This is not financial advice.
+                    <br><br>
+                    <strong>Our first AI-grown tomato will be auctioned for charity, with 100% of proceeds going to fight food insecurity.</strong>
+                </div>
             </div>
             <div class="cta-container">
                 <a href="https://pump.fun/coin/jk1T35eWK41MBMM8AWoYVaNbjHEEQzMDetTsfnqpump" target="_blank" class="cta-button">
@@ -746,20 +669,6 @@
             </div>
         </section>
 
-        <!-- Pump.fun Comments Section -->
-        <section class="comments-section">
-            <div class="comments-header">
-                <span class="section-title">💬 Community Chat (Pump.fun)</span>
-                <span class="section-title" id="comments-refresh">Auto-refresh: 30s</span>
-            </div>
-            <div id="comments-list" class="comments-list">
-                <div class="comment">
-                    <div class="comment-content">
-                        <div class="comment-text loading">Loading comments from pump.fun...</div>
-                    </div>
-                </div>
-            </div>
-        </section>
     </main>
 
     <footer class="footer">
@@ -769,7 +678,7 @@
     </footer>
 
     <script>
-        const API_BASE = '';  // Same directory
+        const API_BASE = 'https://autoncorp.com/biodome/';  // Production server
         const PUMPFUN_TOKEN = 'jk1T35eWK41MBMM8AWoYVaNbjHEEQzMDetTsfnqpump';
         const PUMPFUN_API = 'https://frontend-api-v3.pump.fun';
         let isDemoMode = false;
@@ -985,85 +894,15 @@ Good morning! **Sol is thriving** today. The new compound leaves are developing 
             document.getElementById('pumpfun-update').textContent = `Updated ${new Date().toLocaleTimeString()}`;
         }
 
-        async function fetchPumpFunComments() {
-            try {
-                const response = await fetch(`${PUMPFUN_API}/replies/${PUMPFUN_TOKEN}?limit=15&offset=0`, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'Origin': 'https://pump.fun'
-                    }
-                });
-
-                if (!response.ok) throw new Error('Comments API error');
-                const data = await response.json();
-                updateComments(data.replies || []);
-            } catch (error) {
-                console.error('Failed to fetch comments:', error);
-                document.getElementById('comments-list').innerHTML =
-                    '<div class="comment"><div class="comment-content"><div class="comment-text error">Failed to load comments</div></div></div>';
-            }
-        }
-
-        function updateComments(replies) {
-            const container = document.getElementById('comments-list');
-
-            if (!replies.length) {
-                container.innerHTML = '<div class="comment"><div class="comment-content"><div class="comment-text">No comments yet</div></div></div>';
-                return;
-            }
-
-            // Sort by timestamp descending (newest first)
-            replies.sort((a, b) => b.timestamp - a.timestamp);
-
-            container.innerHTML = replies.map(reply => {
-                const username = reply.username || reply.user.slice(0, 8) + '...';
-                const timeAgo = getTimeAgo(reply.timestamp);
-                const avatarHtml = reply.profile_image
-                    ? `<img src="${reply.profile_image}" alt="${username}" onerror="this.parentElement.innerHTML='🌱'">`
-                    : '🌱';
-                const likesClass = reply.total_likes > 0 ? 'has-likes' : '';
-
-                return `
-                    <div class="comment">
-                        <div class="comment-avatar">${avatarHtml}</div>
-                        <div class="comment-content">
-                            <div class="comment-header">
-                                <span class="comment-username">${escapeHtml(username)}</span>
-                                <span class="comment-time">${timeAgo}</span>
-                            </div>
-                            <div class="comment-text">${escapeHtml(reply.text)}</div>
-                            ${reply.total_likes > 0 ? `<div class="comment-likes ${likesClass}">❤️ ${reply.total_likes}</div>` : ''}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function getTimeAgo(timestamp) {
-            const seconds = Math.floor((Date.now() - timestamp) / 1000);
-            if (seconds < 60) return 'just now';
-            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-            return `${Math.floor(seconds / 86400)}d ago`;
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
         // Initial load
         fetchStatus();
         refreshWebcam();
         fetchPumpFunData();
-        fetchPumpFunComments();
 
         // Auto-refresh intervals
         setInterval(fetchStatus, 120000);          // Plant status: 2 minutes
         setInterval(refreshWebcam, 120000);        // Webcam: 2 minutes
         setInterval(fetchPumpFunData, 30000);      // Pump.fun metrics: 30 seconds
-        setInterval(fetchPumpFunComments, 30000);  // Comments: 30 seconds
     </script>
 </body>
 </html>
