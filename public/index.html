@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sol The Trophy Tomato - Live Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0a0f0a;
+            --bg-card: #111a11;
+            --bg-card-hover: #152015;
+            --text-primary: #e8f5e8;
+            --text-secondary: #8ba88b;
+            --text-muted: #5a7a5a;
+            --accent-green: #4ade80;
+            --accent-green-dim: #22c55e;
+            --accent-yellow: #fbbf24;
+            --accent-red: #f87171;
+            --accent-blue: #60a5fa;
+            --accent-purple: #a78bfa;
+            --border: #1e3a1e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(180deg, var(--bg-card) 0%, transparent 100%);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-icon { font-size: 2rem; }
+        .logo-text { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+        .logo-sub { font-size: 0.85rem; color: var(--text-secondary); font-weight: 400; }
+
+        .header-right { display: flex; align-items: center; gap: 1rem; }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-card);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid var(--border);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .db-status {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            background: var(--bg-card);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border);
+        }
+
+        .db-status.connected { color: var(--accent-green); border-color: var(--accent-green); }
+
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* Main Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            padding: 1.5rem 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .full-width { grid-column: 1 / -1; }
+
+        /* Health Score & VPD Section */
+        .stats-row {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .health-score-card {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .health-ring {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 1rem;
+            position: relative;
+        }
+
+        .health-ring svg { transform: rotate(-90deg); }
+        .health-ring circle { fill: none; stroke-width: 8; }
+        .health-ring .bg { stroke: var(--border); }
+        .health-ring .progress { stroke: var(--accent-green); stroke-linecap: round; transition: stroke-dashoffset 0.5s; }
+
+        .health-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .health-label { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.25rem; }
+        .health-mood { font-size: 1.5rem; margin-top: 0.5rem; }
+        .health-mood-text { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* Growth Timeline */
+        .growth-timeline {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+        }
+
+        .timeline-title { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .timeline-stages {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .timeline-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--border);
+            z-index: 0;
+        }
+
+        .timeline-progress {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            height: 4px;
+            background: var(--accent-green);
+            z-index: 1;
+            transition: width 0.5s;
+        }
+
+        .stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 2;
+            background: var(--bg-card);
+            padding: 0 0.5rem;
+        }
+
+        .stage-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-dark);
+            border: 3px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .stage.active .stage-icon { border-color: var(--accent-green); background: rgba(74, 222, 128, 0.2); }
+        .stage.completed .stage-icon { border-color: var(--accent-green); background: var(--accent-green); }
+
+        .stage-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+        .stage.active .stage-label { color: var(--accent-green); font-weight: 600; }
+
+        /* VPD Gauge */
+        .vpd-gauge-card {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .vpd-gauge { position: relative; height: 100px; margin: 1rem 0; }
+
+        .vpd-bar {
+            display: flex;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: var(--bg-dark);
+        }
+
+        .vpd-zone {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            font-weight: 600;
+            color: rgba(0,0,0,0.7);
+        }
+
+        .vpd-zone.stress-low { background: var(--accent-blue); flex: 1; }
+        .vpd-zone.low { background: var(--accent-yellow); flex: 1; }
+        .vpd-zone.optimal { background: var(--accent-green); flex: 2; }
+        .vpd-zone.high { background: var(--accent-yellow); flex: 1; }
+        .vpd-zone.stress-high { background: var(--accent-red); flex: 1; }
+
+        .vpd-marker {
+            position: absolute;
+            top: 0;
+            width: 4px;
+            height: 40px;
+            background: var(--text-primary);
+            border-radius: 2px;
+            transform: translateX(-50%);
+            transition: left 0.5s;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        .vpd-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .vpd-current {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 0.5rem;
+        }
+
+        .vpd-status { font-size: 0.8rem; color: var(--text-secondary); }
+
+        /* Section Cards */
+        .section-card {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Webcam */
+        .webcam-section { max-height: 450px; display: flex; flex-direction: column; }
+        .webcam-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 1rem; background: #050805; }
+        .webcam-img { max-width: 100%; max-height: 100%; border-radius: 0.5rem; object-fit: contain; }
+        .webcam-placeholder { color: var(--text-muted); text-align: center; }
+
+        /* Verdant Output */
+        .output-section { max-height: 450px; display: flex; flex-direction: column; }
+        .output-content {
+            flex: 1;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+            overflow-y: auto;
+            background: linear-gradient(180deg, transparent 0%, rgba(74, 222, 128, 0.02) 100%);
+        }
+        .output-content h1, .output-content h2, .output-content h3 { color: var(--accent-green); margin: 0.5em 0 0.25em 0; font-family: 'Space Grotesk', sans-serif; }
+        .output-content h1 { font-size: 1.1rem; }
+        .output-content h2 { font-size: 1rem; }
+        .output-content h3 { font-size: 0.9rem; }
+        .output-content strong { color: var(--accent-green); }
+        .output-content em { color: var(--accent-yellow); }
+        .output-content code { background: rgba(74, 222, 128, 0.15); padding: 0.1em 0.3em; border-radius: 3px; color: var(--accent-green); }
+        .output-content blockquote { border-left: 3px solid var(--accent-green); padding-left: 1em; margin: 0.5em 0; color: var(--text-secondary); }
+
+        /* Sensors Grid */
+        .sensors-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); }
+
+        .sensor-card {
+            background: var(--bg-card);
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .sensor-icon { font-size: 1.25rem; margin-bottom: 0.25rem; }
+        .sensor-value { font-size: 1.5rem; font-weight: 700; color: var(--accent-green); font-family: 'JetBrains Mono', monospace; }
+        .sensor-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
+
+        /* Sparkline */
+        .sparkline {
+            height: 30px;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 2px;
+        }
+
+        .sparkline-bar {
+            width: 4px;
+            background: var(--accent-green);
+            border-radius: 2px;
+            opacity: 0.6;
+            transition: height 0.3s, opacity 0.3s;
+        }
+
+        .sparkline-bar:last-child { opacity: 1; }
+
+        .sensor-trend {
+            font-size: 0.65rem;
+            margin-top: 0.25rem;
+        }
+        .sensor-trend.up { color: var(--accent-green); }
+        .sensor-trend.down { color: var(--accent-red); }
+        .sensor-trend.stable { color: var(--text-muted); }
+
+        /* Devices Grid */
+        .devices-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; padding: 1rem; }
+
+        .device-card {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: var(--bg-dark);
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .device-card.active { border-color: var(--accent-green); background: rgba(74, 222, 128, 0.1); }
+
+        .device-indicator { width: 10px; height: 10px; border-radius: 50%; transition: all 0.3s; }
+        .device-indicator.on { background: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
+        .device-indicator.off { background: var(--text-muted); }
+
+        .device-name { font-size: 0.8rem; color: var(--text-secondary); }
+
+        /* Token Section */
+        .token-section {
+            background: linear-gradient(135deg, var(--bg-card) 0%, #111a18 100%);
+        }
+
+        .token-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(90deg, rgba(74, 222, 128, 0.1) 0%, transparent 100%);
+        }
+
+        .token-title { font-size: 1rem; font-weight: 600; color: var(--accent-green); display: flex; align-items: center; gap: 0.5rem; }
+
+        .live-badge {
+            background: var(--accent-green);
+            color: var(--bg-dark);
+            font-size: 0.65rem;
+            padding: 0.2em 0.5em;
+            border-radius: 0.25rem;
+            font-weight: 700;
+        }
+
+        .token-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding: 1.25rem; }
+
+        .metric-card {
+            background: var(--bg-dark);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .metric-value { font-size: 1.25rem; font-weight: 700; color: var(--accent-green); font-family: 'JetBrains Mono', monospace; }
+        .metric-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
+
+        /* ATH Progress Bar */
+        .ath-progress {
+            margin-top: 0.5rem;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .ath-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-yellow));
+            border-radius: 3px;
+            transition: width 0.5s;
+        }
+
+        .ath-percent { font-size: 0.65rem; color: var(--accent-yellow); margin-top: 0.25rem; }
+
+        /* Disclaimer */
+        .disclaimer {
+            padding: 1.25rem 1.5rem;
+            background: rgba(251, 191, 36, 0.15);
+            border-top: 2px solid rgba(251, 191, 36, 0.5);
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            line-height: 1.5;
+        }
+
+        .disclaimer-icon { font-size: 1.5rem; flex-shrink: 0; }
+        .disclaimer-text strong { color: var(--accent-yellow); }
+
+        .cta-container { padding: 1rem 1.25rem; display: flex; justify-content: center; }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-green-dim) 100%);
+            color: var(--bg-dark);
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px rgba(74, 222, 128, 0.3);
+        }
+
+        .cta-button:hover { transform: translateY(-2px); box-shadow: 0 6px 30px rgba(74, 222, 128, 0.4); }
+
+        /* Footer */
+        .footer {
+            padding: 1rem 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .sol-day { color: var(--accent-green); font-weight: 600; }
+
+        .loading { color: var(--text-muted); font-style: italic; }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+            .main-container { grid-template-columns: 1fr; padding: 1rem; }
+            .stats-row { grid-template-columns: 1fr; }
+            .output-section { order: -1; max-height: 300px; }
+            .sensors-grid { grid-template-columns: repeat(2, 1fr); }
+            .devices-grid { grid-template-columns: repeat(2, 1fr); }
+            .token-metrics { grid-template-columns: repeat(2, 1fr); }
+            .header { flex-direction: column; gap: 1rem; text-align: center; }
+            .header-right { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <span class="logo-icon">🌱</span>
+            <div>
+                <div class="logo-text">Sol The Trophy Tomato</div>
+                <div class="logo-sub">Powered by AutonCorp Verdant Autonomics</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="db-status" id="db-status">DB: connecting...</div>
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                <span id="last-update">Connecting...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Stats Row: Health Score, Timeline, VPD Gauge -->
+        <div class="stats-row">
+            <!-- Plant Health Score -->
+            <div class="health-score-card">
+                <div class="health-label">Plant Health Score</div>
+                <div class="health-ring">
+                    <svg width="120" height="120" viewBox="0 0 120 120">
+                        <circle class="bg" cx="60" cy="60" r="52"></circle>
+                        <circle class="progress" id="health-progress" cx="60" cy="60" r="52"
+                            stroke-dasharray="327" stroke-dashoffset="327"></circle>
+                    </svg>
+                    <div class="health-value" id="health-value">--</div>
+                </div>
+                <div class="health-mood" id="health-mood">🌱</div>
+                <div class="health-mood-text" id="health-mood-text">Calculating...</div>
+            </div>
+
+            <!-- Growth Timeline -->
+            <div class="growth-timeline">
+                <div class="timeline-title">Growth Stage - Day <span id="timeline-day">--</span></div>
+                <div class="timeline-stages">
+                    <div class="timeline-line"></div>
+                    <div class="timeline-progress" id="timeline-progress"></div>
+                    <div class="stage completed" id="stage-seed">
+                        <div class="stage-icon">🌰</div>
+                        <div class="stage-label">Seed</div>
+                    </div>
+                    <div class="stage completed" id="stage-sprout">
+                        <div class="stage-icon">🌱</div>
+                        <div class="stage-label">Sprout</div>
+                    </div>
+                    <div class="stage active" id="stage-veg">
+                        <div class="stage-icon">🌿</div>
+                        <div class="stage-label">Vegetative</div>
+                    </div>
+                    <div class="stage" id="stage-flower">
+                        <div class="stage-icon">🌸</div>
+                        <div class="stage-label">Flowering</div>
+                    </div>
+                    <div class="stage" id="stage-fruit">
+                        <div class="stage-icon">🍅</div>
+                        <div class="stage-label">Fruiting</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VPD Gauge -->
+            <div class="vpd-gauge-card">
+                <div class="timeline-title">VPD Zone</div>
+                <div class="vpd-gauge">
+                    <div class="vpd-bar">
+                        <div class="vpd-zone stress-low">LOW</div>
+                        <div class="vpd-zone low"></div>
+                        <div class="vpd-zone optimal">OPTIMAL</div>
+                        <div class="vpd-zone high"></div>
+                        <div class="vpd-zone stress-high">HIGH</div>
+                    </div>
+                    <div class="vpd-marker" id="vpd-marker" style="left: 50%;"></div>
+                    <div class="vpd-labels">
+                        <span>0.4</span>
+                        <span>0.8</span>
+                        <span>1.2</span>
+                        <span>1.6</span>
+                    </div>
+                </div>
+                <div class="vpd-current" id="vpd-current">-- kPa</div>
+                <div class="vpd-status" id="vpd-status">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Webcam -->
+        <section class="section-card webcam-section">
+            <div class="section-header">
+                <span class="section-title">📷 Live View</span>
+            </div>
+            <div class="webcam-container">
+                <img id="webcam-img" class="webcam-img" alt="Sol the Tomato" style="display: none;">
+                <div id="webcam-placeholder" class="webcam-placeholder"><p>📷 Loading webcam...</p></div>
+            </div>
+        </section>
+
+        <!-- Verdant Output -->
+        <section class="section-card output-section">
+            <div class="section-header">
+                <span class="section-title">🤖 Claude's Latest Output</span>
+            </div>
+            <div id="verdant-output" class="output-content loading">Connecting to Claude...</div>
+        </section>
+
+        <!-- Sensors -->
+        <section class="section-card full-width">
+            <div class="section-header">
+                <span class="section-title">📊 Environmental Sensors</span>
+                <span class="section-title" id="readings-count">-- readings</span>
+            </div>
+            <div class="sensors-grid">
+                <div class="sensor-card">
+                    <div class="sensor-icon">🌡️</div>
+                    <div class="sensor-value" id="sensor-temp">--</div>
+                    <div class="sensor-label">Air Temp</div>
+                    <div class="sparkline" id="spark-temp"></div>
+                    <div class="sensor-trend stable" id="trend-temp">--</div>
+                </div>
+                <div class="sensor-card">
+                    <div class="sensor-icon">💧</div>
+                    <div class="sensor-value" id="sensor-humidity">--</div>
+                    <div class="sensor-label">Humidity</div>
+                    <div class="sparkline" id="spark-humidity"></div>
+                    <div class="sensor-trend stable" id="trend-humidity">--</div>
+                </div>
+                <div class="sensor-card">
+                    <div class="sensor-icon">🌿</div>
+                    <div class="sensor-value" id="sensor-vpd">--</div>
+                    <div class="sensor-label">VPD</div>
+                    <div class="sparkline" id="spark-vpd"></div>
+                    <div class="sensor-trend stable" id="trend-vpd">--</div>
+                </div>
+                <div class="sensor-card">
+                    <div class="sensor-icon">🪴</div>
+                    <div class="sensor-value" id="sensor-soil">--</div>
+                    <div class="sensor-label">Soil Moisture</div>
+                    <div class="sparkline" id="spark-soil"></div>
+                    <div class="sensor-trend stable" id="trend-soil">--</div>
+                </div>
+                <div class="sensor-card">
+                    <div class="sensor-icon">💨</div>
+                    <div class="sensor-value" id="sensor-co2">--</div>
+                    <div class="sensor-label">CO₂ (ppm)</div>
+                    <div class="sparkline" id="spark-co2"></div>
+                    <div class="sensor-trend stable" id="trend-co2">--</div>
+                </div>
+                <div class="sensor-card">
+                    <div class="sensor-icon">🍃</div>
+                    <div class="sensor-value" id="sensor-leaf">--</div>
+                    <div class="sensor-label">Leaf Temp Δ</div>
+                    <div class="sparkline" id="spark-leaf"></div>
+                    <div class="sensor-trend stable" id="trend-leaf">--</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Devices -->
+        <section class="section-card full-width">
+            <div class="section-header">
+                <span class="section-title">⚡ Device Status</span>
+            </div>
+            <div class="devices-grid">
+                <div class="device-card" id="card-light">
+                    <div class="device-indicator off" id="device-light"></div>
+                    <span class="device-name">💡 Grow Light</span>
+                </div>
+                <div class="device-card" id="card-heat">
+                    <div class="device-indicator off" id="device-heat"></div>
+                    <span class="device-name">🔥 Heat Mat</span>
+                </div>
+                <div class="device-card" id="card-fan">
+                    <div class="device-indicator off" id="device-fan"></div>
+                    <span class="device-name">💨 Circ Fan</span>
+                </div>
+                <div class="device-card" id="card-exhaust">
+                    <div class="device-indicator off" id="device-exhaust"></div>
+                    <span class="device-name">🌀 Exhaust</span>
+                </div>
+                <div class="device-card" id="card-pump">
+                    <div class="device-indicator off" id="device-pump"></div>
+                    <span class="device-name">💦 Water Pump</span>
+                </div>
+                <div class="device-card" id="card-humid">
+                    <div class="device-indicator off" id="device-humid"></div>
+                    <span class="device-name">💭 Humidifier</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Token Section -->
+        <section class="section-card token-section full-width">
+            <div class="token-header">
+                <div class="token-title">
+                    <span>📈 $SOL Token Metrics</span>
+                    <span class="live-badge" id="token-badge">LIVE</span>
+                </div>
+                <span class="section-title" id="token-update">Loading...</span>
+            </div>
+            <div class="token-metrics">
+                <div class="metric-card">
+                    <div class="metric-value" id="metric-mcap">--</div>
+                    <div class="metric-label">Market Cap</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="metric-holders">--</div>
+                    <div class="metric-label">Participants</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="metric-replies">--</div>
+                    <div class="metric-label">Comments</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="metric-ath">--</div>
+                    <div class="metric-label">ATH Market Cap</div>
+                    <div class="ath-progress">
+                        <div class="ath-progress-bar" id="ath-progress" style="width: 0%;"></div>
+                    </div>
+                    <div class="ath-percent" id="ath-percent">--% of ATH</div>
+                </div>
+            </div>
+            <div class="disclaimer">
+                <span class="disclaimer-icon">⚠️</span>
+                <div class="disclaimer-text">
+                    <strong>DISCLAIMER:</strong> The Sol The Trophy Tomato (SOL) memecoin was created by the crypto community. Trading fees fund our research integrating AI into manufacturing and agriculture. Memecoins are high-risk, speculative assets. Only participate if you can afford to lose what you put in. <strong>Our first AI-grown tomato will be auctioned for charity.</strong>
+                </div>
+            </div>
+            <div class="cta-container">
+                <a href="https://pump.fun/coin/jk1T35eWK41MBMM8AWoYVaNbjHEEQzMDetTsfnqpump" target="_blank" class="cta-button">
+                    <span>🚀</span>
+                    <span>Contribute on Pump.fun</span>
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <span class="sol-day" id="sol-day">Day --</span> ·
+        AutonCorp Biodome Project ·
+        <a href="https://autoncorp.com" style="color: var(--accent-green);">autoncorp.com</a>
+    </footer>
+
+    <script>
+        // API base - auto-detect local vs deployed
+        const API_BASE = '/api';
+
+        // State
+        let historyData = [];
+        let lastSensorData = null;
+
+        // Utility functions
+        function formatNumber(num) {
+            if (num >= 1000000) return `$${(num / 1000000).toFixed(2)}M`;
+            if (num >= 1000) return `$${(num / 1000).toFixed(1)}K`;
+            return `$${num.toFixed(2)}`;
+        }
+
+        function formatCompact(num) {
+            if (num >= 1000000) return `${(num / 1000000).toFixed(2)}M`;
+            if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+            return num.toString();
+        }
+
+        function renderMarkdown(text) {
+            if (typeof marked !== 'undefined') return marked.parse(text);
+            return text.replace(/\n/g, '<br>');
+        }
+
+        // Calculate plant health score (0-100)
+        function calculateHealthScore(sensors) {
+            if (!sensors) return 0;
+
+            let score = 100;
+
+            // Temperature (optimal: 20-28°C)
+            const temp = sensors.air_temp || 0;
+            if (temp < 18 || temp > 32) score -= 20;
+            else if (temp < 20 || temp > 28) score -= 10;
+
+            // VPD (optimal: 0.8-1.2 kPa for veg)
+            const vpd = sensors.vpd || 0;
+            if (vpd < 0.4 || vpd > 1.6) score -= 25;
+            else if (vpd < 0.8 || vpd > 1.2) score -= 10;
+
+            // Humidity (optimal: 50-70%)
+            const humidity = sensors.humidity || 0;
+            if (humidity < 40 || humidity > 80) score -= 15;
+            else if (humidity < 50 || humidity > 70) score -= 5;
+
+            // Soil moisture (optimal: 40-70%)
+            const soil = sensors.soil_moisture || 0;
+            if (soil < 20 || soil > 85) score -= 20;
+            else if (soil < 40 || soil > 70) score -= 10;
+
+            // CO2 (optimal: 400-1000 ppm)
+            const co2 = sensors.co2 || 0;
+            if (co2 < 300 || co2 > 1500) score -= 10;
+
+            return Math.max(0, Math.min(100, score));
+        }
+
+        function getMoodFromScore(score) {
+            if (score >= 90) return { emoji: '😊', text: 'Thriving!' };
+            if (score >= 75) return { emoji: '🙂', text: 'Healthy' };
+            if (score >= 60) return { emoji: '😐', text: 'Okay' };
+            if (score >= 40) return { emoji: '😟', text: 'Stressed' };
+            return { emoji: '😰', text: 'Struggling' };
+        }
+
+        function getVPDStatus(vpd) {
+            if (vpd < 0.4) return { status: 'Too Low - Stress', color: 'var(--accent-blue)' };
+            if (vpd < 0.8) return { status: 'Low - Slow Growth', color: 'var(--accent-yellow)' };
+            if (vpd <= 1.2) return { status: 'Optimal Zone', color: 'var(--accent-green)' };
+            if (vpd <= 1.6) return { status: 'High - Monitor', color: 'var(--accent-yellow)' };
+            return { status: 'Too High - Stress', color: 'var(--accent-red)' };
+        }
+
+        function getGrowthStage(day) {
+            // Tomato growth stages
+            if (day <= 7) return { stage: 'seed', progress: 5 };
+            if (day <= 21) return { stage: 'sprout', progress: 25 };
+            if (day <= 50) return { stage: 'veg', progress: 50 };
+            if (day <= 70) return { stage: 'flower', progress: 75 };
+            return { stage: 'fruit', progress: 95 };
+        }
+
+        // Create sparkline bars
+        function createSparkline(elementId, data, colorFn = () => 'var(--accent-green)') {
+            const container = document.getElementById(elementId);
+            if (!container || !data || data.length === 0) return;
+
+            container.innerHTML = '';
+            const max = Math.max(...data);
+            const min = Math.min(...data);
+            const range = max - min || 1;
+
+            // Take last 12 points
+            const points = data.slice(-12);
+
+            points.forEach((val, i) => {
+                const bar = document.createElement('div');
+                bar.className = 'sparkline-bar';
+                const height = 5 + ((val - min) / range) * 25;
+                bar.style.height = `${height}px`;
+                bar.style.background = colorFn(val);
+                container.appendChild(bar);
+            });
+        }
+
+        function getTrend(data) {
+            if (!data || data.length < 2) return { direction: 'stable', text: '--' };
+            const recent = data.slice(-3);
+            const older = data.slice(-6, -3);
+            if (recent.length === 0 || older.length === 0) return { direction: 'stable', text: '--' };
+
+            const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+            const olderAvg = older.reduce((a, b) => a + b, 0) / older.length;
+            const diff = recentAvg - olderAvg;
+            const pct = ((diff / olderAvg) * 100).toFixed(1);
+
+            if (Math.abs(diff) < 0.5) return { direction: 'stable', text: 'Stable' };
+            if (diff > 0) return { direction: 'up', text: `↑ ${pct}%` };
+            return { direction: 'down', text: `↓ ${Math.abs(pct)}%` };
+        }
+
+        // Update functions
+        function updateHealthScore(sensors) {
+            const score = calculateHealthScore(sensors);
+            const mood = getMoodFromScore(score);
+
+            document.getElementById('health-value').textContent = score;
+            document.getElementById('health-mood').textContent = mood.emoji;
+            document.getElementById('health-mood-text').textContent = mood.text;
+
+            // Update ring
+            const progress = document.getElementById('health-progress');
+            const circumference = 327; // 2 * PI * 52
+            const offset = circumference - (score / 100) * circumference;
+            progress.style.strokeDashoffset = offset;
+
+            // Color based on score
+            if (score >= 75) progress.style.stroke = 'var(--accent-green)';
+            else if (score >= 50) progress.style.stroke = 'var(--accent-yellow)';
+            else progress.style.stroke = 'var(--accent-red)';
+        }
+
+        function updateVPDGauge(vpd) {
+            const marker = document.getElementById('vpd-marker');
+            const current = document.getElementById('vpd-current');
+            const status = document.getElementById('vpd-status');
+
+            // Map VPD (0.4 to 1.6) to percentage (0 to 100)
+            const pct = Math.max(0, Math.min(100, ((vpd - 0.4) / 1.2) * 100));
+            marker.style.left = `${pct}%`;
+
+            current.textContent = `${vpd.toFixed(2)} kPa`;
+            const vpdStatus = getVPDStatus(vpd);
+            status.textContent = vpdStatus.status;
+            status.style.color = vpdStatus.color;
+            current.style.color = vpdStatus.color;
+        }
+
+        function updateGrowthTimeline(day) {
+            document.getElementById('timeline-day').textContent = day;
+            const { stage, progress } = getGrowthStage(day);
+
+            document.getElementById('timeline-progress').style.width = `${progress}%`;
+
+            const stages = ['seed', 'sprout', 'veg', 'flower', 'fruit'];
+            const currentIndex = stages.indexOf(stage);
+
+            stages.forEach((s, i) => {
+                const el = document.getElementById(`stage-${s}`);
+                el.classList.remove('active', 'completed');
+                if (i < currentIndex) el.classList.add('completed');
+                else if (i === currentIndex) el.classList.add('active');
+            });
+        }
+
+        function updateDevice(id, cardId, isOn) {
+            const indicator = document.getElementById(id);
+            const card = document.getElementById(cardId);
+            if (indicator) {
+                indicator.classList.toggle('on', isOn);
+                indicator.classList.toggle('off', !isOn);
+            }
+            if (card) {
+                card.classList.toggle('active', isOn);
+            }
+        }
+
+        // Fetch functions
+        async function fetchStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status?t=${Date.now()}`);
+                if (!response.ok) throw new Error('Status unavailable');
+
+                const data = await response.json();
+                lastSensorData = data;
+
+                // Update Verdant output
+                const outputEl = document.getElementById('verdant-output');
+                outputEl.innerHTML = renderMarkdown(data.verdant_output || 'No output available');
+                outputEl.classList.remove('loading');
+
+                // Update sensors
+                if (data.sensors) {
+                    document.getElementById('sensor-temp').textContent = data.sensors.air_temp ? `${data.sensors.air_temp.toFixed(1)}°C` : '--';
+                    document.getElementById('sensor-humidity').textContent = data.sensors.humidity ? `${data.sensors.humidity.toFixed(0)}%` : '--';
+                    document.getElementById('sensor-vpd').textContent = data.sensors.vpd ? data.sensors.vpd.toFixed(2) : '--';
+                    document.getElementById('sensor-soil').textContent = data.sensors.soil_moisture ? `${data.sensors.soil_moisture.toFixed(0)}%` : '--';
+                    document.getElementById('sensor-co2').textContent = data.sensors.co2 ? Math.round(data.sensors.co2) : '--';
+                    document.getElementById('sensor-leaf').textContent = data.sensors.leaf_temp_delta ? `${data.sensors.leaf_temp_delta.toFixed(1)}°` : '--';
+
+                    updateHealthScore(data.sensors);
+                    if (data.sensors.vpd) updateVPDGauge(data.sensors.vpd);
+                }
+
+                // Update devices
+                if (data.devices) {
+                    updateDevice('device-light', 'card-light', data.devices.grow_light);
+                    updateDevice('device-heat', 'card-heat', data.devices.heat_mat);
+                    updateDevice('device-fan', 'card-fan', data.devices.circulation_fan);
+                    updateDevice('device-exhaust', 'card-exhaust', data.devices.exhaust_fan);
+                    updateDevice('device-pump', 'card-pump', data.devices.water_pump);
+                    updateDevice('device-humid', 'card-humid', data.devices.humidifier);
+                }
+
+                // Update day
+                if (data.sol_day) {
+                    document.getElementById('sol-day').textContent = `Day ${data.sol_day}`;
+                    updateGrowthTimeline(data.sol_day);
+                }
+
+                // Update timestamp
+                const date = data.timestamp ? new Date(data.timestamp) : new Date();
+                document.getElementById('last-update').textContent = `Updated ${date.toLocaleTimeString()}`;
+
+            } catch (error) {
+                console.error('Status fetch error:', error);
+            }
+        }
+
+        async function fetchHistory() {
+            try {
+                const response = await fetch(`${API_BASE}/history/hourly?hours=24`);
+                if (!response.ok) throw new Error('History unavailable');
+
+                const result = await response.json();
+                historyData = result.data || [];
+
+                if (historyData.length > 0) {
+                    // Create sparklines
+                    const temps = historyData.map(d => parseFloat(d.avg_temp) || 0);
+                    const humidities = historyData.map(d => parseFloat(d.avg_humidity) || 0);
+                    const vpds = historyData.map(d => parseFloat(d.avg_vpd) || 0);
+                    const soils = historyData.map(d => parseFloat(d.avg_soil_moisture) || 0);
+                    const co2s = historyData.map(d => parseFloat(d.avg_co2) || 0);
+                    const leafs = historyData.map(d => parseFloat(d.avg_leaf_delta) || 0);
+
+                    createSparkline('spark-temp', temps);
+                    createSparkline('spark-humidity', humidities);
+                    createSparkline('spark-vpd', vpds, v => v >= 0.8 && v <= 1.2 ? 'var(--accent-green)' : 'var(--accent-yellow)');
+                    createSparkline('spark-soil', soils);
+                    createSparkline('spark-co2', co2s);
+                    createSparkline('spark-leaf', leafs);
+
+                    // Update trends
+                    const updateTrend = (id, data) => {
+                        const trend = getTrend(data);
+                        const el = document.getElementById(id);
+                        el.textContent = trend.text;
+                        el.className = `sensor-trend ${trend.direction}`;
+                    };
+
+                    updateTrend('trend-temp', temps);
+                    updateTrend('trend-humidity', humidities);
+                    updateTrend('trend-vpd', vpds);
+                    updateTrend('trend-soil', soils);
+                    updateTrend('trend-co2', co2s);
+                    updateTrend('trend-leaf', leafs);
+                }
+            } catch (error) {
+                console.error('History fetch error:', error);
+            }
+        }
+
+        async function fetchHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+
+                const dbStatus = document.getElementById('db-status');
+                if (data.database?.ok) {
+                    dbStatus.textContent = `DB: ${data.total_readings} readings`;
+                    dbStatus.classList.add('connected');
+                    document.getElementById('readings-count').textContent = `${data.total_readings} readings stored`;
+                } else {
+                    dbStatus.textContent = 'DB: disconnected';
+                    dbStatus.classList.remove('connected');
+                }
+            } catch (error) {
+                console.error('Health check error:', error);
+            }
+        }
+
+        async function fetchToken() {
+            try {
+                const response = await fetch(`${API_BASE}/token`);
+                if (!response.ok) throw new Error('Token API error');
+
+                const data = await response.json();
+
+                document.getElementById('metric-mcap').textContent = formatNumber(data.usd_market_cap || 0);
+                document.getElementById('metric-holders').textContent = data.num_participants || '--';
+                document.getElementById('metric-replies').textContent = formatCompact(data.reply_count || 0);
+                document.getElementById('metric-ath').textContent = formatNumber(data.ath_market_cap || 0);
+
+                // ATH progress
+                if (data.usd_market_cap && data.ath_market_cap) {
+                    const athPct = (data.usd_market_cap / data.ath_market_cap) * 100;
+                    document.getElementById('ath-progress').style.width = `${Math.min(100, athPct)}%`;
+                    document.getElementById('ath-percent').textContent = `${athPct.toFixed(1)}% of ATH`;
+                }
+
+                // Badge
+                const badge = document.getElementById('token-badge');
+                if (data.complete) {
+                    badge.textContent = 'GRADUATED';
+                    badge.style.background = 'var(--accent-blue)';
+                }
+
+                document.getElementById('token-update').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+            } catch (error) {
+                console.error('Token fetch error:', error);
+            }
+        }
+
+        function refreshWebcam() {
+            const img = document.getElementById('webcam-img');
+            const placeholder = document.getElementById('webcam-placeholder');
+
+            const newImg = new Image();
+            newImg.onload = function() {
+                img.src = this.src;
+                img.style.display = 'block';
+                placeholder.style.display = 'none';
+            };
+            newImg.onerror = function() {
+                placeholder.innerHTML = '<p>📷 Webcam unavailable</p>';
+            };
+            newImg.src = `${API_BASE}/webcam?t=${Date.now()}`;
+        }
+
+        // Initialize
+        fetchStatus();
+        fetchHistory();
+        fetchHealth();
+        fetchToken();
+        refreshWebcam();
+
+        // Auto-refresh
+        setInterval(fetchStatus, 60000);      // Status: 1 minute
+        setInterval(fetchHistory, 300000);    // History: 5 minutes
+        setInterval(fetchHealth, 60000);      // Health: 1 minute
+        setInterval(fetchToken, 30000);       // Token: 30 seconds
+        setInterval(refreshWebcam, 120000);   // Webcam: 2 minutes
+    </script>
+</body>
+</html>
