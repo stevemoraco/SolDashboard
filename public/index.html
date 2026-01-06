@@ -989,11 +989,11 @@
 
         async function fetchHistory() {
             try {
-                const response = await fetch(`${API_BASE}/history/hourly?hours=24`);
+                const response = await fetch(`${API_BASE}/aggregates/hourly?hours=24`);
                 if (!response.ok) throw new Error('History unavailable');
 
                 const result = await response.json();
-                historyData = result.data || [];
+                historyData = result || [];
 
                 if (historyData.length > 0) {
                     // Create sparklines
@@ -1033,16 +1033,17 @@
 
         async function fetchHealth() {
             try {
-                const response = await fetch(`${API_BASE}/health`);
+                const response = await fetch(`${API_BASE}/stats`);
                 const data = await response.json();
 
                 const dbStatus = document.getElementById('db-status');
-                if (data.database?.ok) {
-                    dbStatus.textContent = `DB: ${data.total_readings} readings`;
+                const totalReadings = data.total_records?.sensor_readings || 0;
+                if (totalReadings > 0) {
+                    dbStatus.textContent = `DB: ${totalReadings} readings`;
                     dbStatus.classList.add('connected');
-                    document.getElementById('readings-count').textContent = `${data.total_readings} readings stored`;
+                    document.getElementById('readings-count').textContent = `${totalReadings} readings stored`;
                 } else {
-                    dbStatus.textContent = 'DB: disconnected';
+                    dbStatus.textContent = 'DB: no data';
                     dbStatus.classList.remove('connected');
                 }
             } catch (error) {
@@ -1052,14 +1053,14 @@
 
         async function fetchToken() {
             try {
-                const response = await fetch(`${API_BASE}/token`);
+                const response = await fetch(`${API_BASE}/coin/latest`);
                 if (!response.ok) throw new Error('Token API error');
 
                 const data = await response.json();
 
                 document.getElementById('metric-mcap').textContent = formatNumber(data.usd_market_cap || 0);
-                document.getElementById('metric-holders').textContent = data.num_participants || '--';
-                document.getElementById('metric-replies').textContent = formatCompact(data.reply_count || 0);
+                document.getElementById('metric-holders').textContent = data.holders || '--';
+                document.getElementById('metric-replies').textContent = formatCompact(data.replies || 0);
                 document.getElementById('metric-ath').textContent = formatNumber(data.ath_market_cap || 0);
 
                 // ATH progress
@@ -1067,13 +1068,6 @@
                     const athPct = (data.usd_market_cap / data.ath_market_cap) * 100;
                     document.getElementById('ath-progress').style.width = `${Math.min(100, athPct)}%`;
                     document.getElementById('ath-percent').textContent = `${athPct.toFixed(1)}% of ATH`;
-                }
-
-                // Badge
-                const badge = document.getElementById('token-badge');
-                if (data.complete) {
-                    badge.textContent = 'GRADUATED';
-                    badge.style.background = 'var(--accent-blue)';
                 }
 
                 document.getElementById('token-update').textContent = `Updated ${new Date().toLocaleTimeString()}`;
@@ -1095,7 +1089,7 @@
             newImg.onerror = function() {
                 placeholder.innerHTML = '<p>📷 Webcam unavailable</p>';
             };
-            newImg.src = `${API_BASE}/webcam?t=${Date.now()}`;
+            newImg.src = `https://autoncorp.com/biodome/get_webcam.php?t=${Date.now()}`;
         }
 
         // Initialize
