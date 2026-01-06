@@ -678,7 +678,9 @@
     </footer>
 
     <script>
-        const API_BASE = 'https://autoncorp.com/biodome/';  // Production server
+        // Auto-detect local vs production
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const API_BASE = isLocal ? '' : 'https://autoncorp.com/biodome/';
         let isDemoMode = false;
 
         // Demo data for when backend isn't available
