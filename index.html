@@ -679,8 +679,6 @@
 
     <script>
         const API_BASE = 'https://autoncorp.com/biodome/';  // Production server
-        const PUMPFUN_TOKEN = 'jk1T35eWK41MBMM8AWoYVaNbjHEEQzMDetTsfnqpump';
-        const PUMPFUN_API = 'https://frontend-api-v3.pump.fun';
         let isDemoMode = false;
 
         // Demo data for when backend isn't available
@@ -848,22 +846,27 @@ Good morning! **Sol is thriving** today. The new compound leaves are developing 
             newImg.src = `${API_BASE}get_webcam.php?t=${Date.now()}`;
         }
 
-        // Pump.fun API functions
+        // Pump.fun API functions - uses PHP proxy to avoid CORS
         async function fetchPumpFunData() {
             try {
-                const response = await fetch(`${PUMPFUN_API}/coins/${PUMPFUN_TOKEN}`, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'Origin': 'https://pump.fun'
-                    }
-                });
+                // Use PHP proxy on same domain to avoid CORS
+                const response = await fetch(`${API_BASE}get_pumpfun.php?t=${Date.now()}`);
 
                 if (!response.ok) throw new Error('Pump.fun API error');
                 const data = await response.json();
+
+                if (data.error) throw new Error(data.error);
+
                 updatePumpFunMetrics(data);
             } catch (error) {
                 console.error('Failed to fetch pump.fun data:', error);
                 document.getElementById('pumpfun-update').textContent = 'API unavailable';
+
+                // Show dashes when unavailable
+                document.getElementById('metric-mcap').textContent = '--';
+                document.getElementById('metric-holders').textContent = '--';
+                document.getElementById('metric-replies').textContent = '--';
+                document.getElementById('metric-ath').textContent = '--';
             }
         }
 
